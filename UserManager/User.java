@@ -1,3 +1,6 @@
+// https://velog.io/@eg_log/Java-%EB%A1%9C%EA%B7%B8%EC%9D%B8%ED%9A%8C%EC%9B%90%EA%B0%80%EC%9E%85-%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8Swing-GUI#3-user 참고
+// 2024.5.24 made by 정소윤, 유은서
+
 package login.project;
 
 public class User {
