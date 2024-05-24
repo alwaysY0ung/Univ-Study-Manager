@@ -9,6 +9,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class ClassDb extends JFrame {
     private JTabbedPane tabbedPane;
@@ -16,7 +18,7 @@ public class ClassDb extends JFrame {
     private Map<String, DefaultTableModel> modelMap = new HashMap<>();
 
     public ClassDb() {
-        String csvFile = "class_db.csv";
+        String csvFile = "C:/Users/SOYUN/Desktop/객체 팀플 수업DB/class_db.csv";;
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
             StringBuilder sb = new StringBuilder();
@@ -81,6 +83,8 @@ public class ClassDb extends JFrame {
             JTable table = new JTable(entry.getValue());
             table.getColumnModel().getColumn(5).setCellRenderer(new HyperlinkRenderer());
             table.getColumnModel().getColumn(6).setCellRenderer(new InfoRenderer());
+            table.setDefaultRenderer(String.class, new DateRenderer());
+
 
             table.addMouseListener(new MouseAdapter() {
                 @Override
@@ -142,6 +146,8 @@ public class ClassDb extends JFrame {
             JTable newTable = new JTable(newModel);
             newTable.getColumnModel().getColumn(5).setCellRenderer(new HyperlinkRenderer());
             newTable.getColumnModel().getColumn(6).setCellRenderer(new InfoRenderer());
+            newTable.setDefaultRenderer(String.class, new DateRenderer());
+
 
             newTable.addMouseListener(new MouseAdapter() {
                 @Override
@@ -234,6 +240,42 @@ public class ClassDb extends JFrame {
             return label;
         }
     }
+
+    // 수업일이 당일이거나 전날일 경우, 체크박스 미체크시 빨간색 처리
+    // "복습" 체크박스 미체크시 "예고된 강의 내용" 빨간색처리 완료
+    // "완료여부" 체크박스 미체크시 "To-Do" 빨간색 처리: 시도했으나 이유 모르게 작동하지 않음.
+    // 둘은 같은 로직인데 왜 하나는 작동하지 않는지 모르겠음. 고쳐야한다.
+    private class DateRenderer extends DefaultTableCellRenderer {
+        private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (column == 1 || column == 6) { // "예고된 강의 내용" or "To-Do"
+                String dateStr = (String) table.getValueAt(row, 8); // "수업일" 열의 값
+                LocalDate classDate = LocalDate.parse(dateStr, formatter);
+                LocalDate today = LocalDate.now();
+
+                boolean isPastOrToday = !classDate.isAfter(today);
+                boolean reviewChecked = (Boolean) table.getValueAt(row, 2);
+                boolean todoCompletionChecked = (Boolean) table.getValueAt(row, 7);
+
+                if (column == 1 && isPastOrToday && !reviewChecked) {
+                    c.setForeground(Color.RED);
+                } else if (column == 6 && isPastOrToday && !todoCompletionChecked) {
+                    c.setForeground(Color.RED);
+                } else {
+                    c.setForeground(Color.BLACK);
+                }
+            } else {
+                c.setForeground(Color.BLACK);
+            }
+            return c;
+        }
+    }
+
+
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
