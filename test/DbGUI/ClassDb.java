@@ -18,7 +18,7 @@ public class ClassDb extends JFrame {
     private Map<String, DefaultTableModel> modelMap = new HashMap<>();
 
     public ClassDb() {
-        String csvFile = "C:/Users/SOYUN/Desktop/객체 팀플 수업DB/class_db.csv";;
+        String csvFile = "class_db.csv";;
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
             StringBuilder sb = new StringBuilder();
@@ -82,7 +82,7 @@ public class ClassDb extends JFrame {
         for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
             JTable table = new JTable(entry.getValue());
             table.getColumnModel().getColumn(5).setCellRenderer(new HyperlinkRenderer());
-            table.getColumnModel().getColumn(6).setCellRenderer(new InfoRenderer());
+            table.getColumnModel().getColumn(1).setCellRenderer(new InfoRenderer());
             table.setDefaultRenderer(String.class, new DateRenderer());
 
 
