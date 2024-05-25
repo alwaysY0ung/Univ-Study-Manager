@@ -84,8 +84,10 @@ public class ClassDb extends JFrame {
         // "강의명"별 모델을 저장하는 맵
         for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
             JTable table = new JTable(entry.getValue());
-            table.getColumnModel().getColumn(5).setCellRenderer(new HyperlinkRenderer());
-            table.getColumnModel().getColumn(1).setCellRenderer(new InfoRenderer());
+            // 한 열에 두 개의 렌더러를 동시에 적용하려면 두 렌더러의 기능을 결합한 새로운 렌더러를 만들어야
+            // table.getColumnModel().getColumn(5).setCellRenderer(new HyperlinkRenderer());
+            // table.getColumnModel().getColumn(1).setCellRenderer(new InfoRenderer());
+            table.getColumnModel().getColumn(1).setCellRenderer(new InfoDateRenderer());
             table.setDefaultRenderer(String.class, new DateRenderer());
 
 
@@ -148,7 +150,8 @@ public class ClassDb extends JFrame {
 
             JTable newTable = new JTable(newModel);
             newTable.getColumnModel().getColumn(5).setCellRenderer(new HyperlinkRenderer());
-            newTable.getColumnModel().getColumn(6).setCellRenderer(new InfoRenderer());
+            // newTable.getColumnModel().getColumn(1).setCellRenderer(new InfoRenderer());
+            // newTable.getColumnModel().getColumn(1).setCellRenderer(new InfoDateRenderer());
             newTable.setDefaultRenderer(String.class, new DateRenderer());
 
 
@@ -238,7 +241,7 @@ public class ClassDb extends JFrame {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            label.setForeground(Color.BLUE.darker());
+            // label.setForeground(Color.BLUE.darker()); // "복습" false 시 빨간색 표시와 겹쳐서 삭제
             label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             return label;
         }
@@ -274,6 +277,31 @@ public class ClassDb extends JFrame {
                 c.setForeground(Color.BLACK);
             }
             return c;
+        }
+    }
+    // 1열에 inforenderer와 infodaterenderer를 동시에 적용하기 위해 새로운 클래스를 정의
+    private class InfoDateRenderer extends DefaultTableCellRenderer {
+        private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    
+            String dateStr = (String) table.getValueAt(row, 8); // "수업일" 열의 값
+            LocalDate classDate = LocalDate.parse(dateStr, formatter);
+            LocalDate today = LocalDate.now();
+    
+            boolean isPastOrToday = !classDate.isAfter(today);
+            boolean reviewChecked = (Boolean) table.getValueAt(row, 2);
+    
+            if (isPastOrToday && !reviewChecked) {
+                label.setForeground(Color.RED);
+            } else {
+                label.setForeground(Color.BLACK);
+            }
+    
+            return label;
         }
     }
 
