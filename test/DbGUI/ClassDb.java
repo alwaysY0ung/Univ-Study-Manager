@@ -17,8 +17,11 @@ public class ClassDb extends JFrame {
     private String[] columnNames = {"주차", "예고된 강의 내용", "복습", "과제/시험", "음성기록", "관련파일", "To-Do", "완료여부", "수업일"};
     private Map<String, DefaultTableModel> modelMap = new HashMap<>();
 
+    /* ClassDb는 CSV 파일에서 수업 정보를 읽어와 GUI로 표시하는 class
+     * 각 수업 정보다 JTable로 표시되며, 강의명 별로 탭으로 구분된다.
+     */
     public ClassDb() {
-        String csvFile = "class_db.csv";;
+        String csvFile = "class_db.csv"; // CSV 파일 경로
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
             StringBuilder sb = new StringBuilder();
@@ -78,7 +81,7 @@ public class ClassDb extends JFrame {
         }
 
         tabbedPane = new JTabbedPane();
-
+        // "강의명"별 모델을 저장하는 맵
         for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
             JTable table = new JTable(entry.getValue());
             table.getColumnModel().getColumn(5).setCellRenderer(new HyperlinkRenderer());
