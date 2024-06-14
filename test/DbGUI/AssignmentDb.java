@@ -7,6 +7,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -38,7 +39,17 @@ public class AssignmentDb extends JFrame {
 
         // model Map의 각 entry에 대해 JTable 생성 및 구성
         for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
-            JTable table = new JTable(entry.getValue()); // 테이블 모델로부터 JTable 생성
+            JTable table = new JTable(entry.getValue()) {
+                @Override
+                public TableCellEditor getCellEditor(int row, int column) {
+                    if (column == 4) { // 과제종류 열
+                        JComboBox<String> comboBox = new JComboBox<>(new String[]{"보고서", "프로젝트", "출석", "시험", "퀴즈"});
+                        return new DefaultCellEditor(comboBox);
+                    }
+                    return super.getCellEditor(row, column);
+                }
+            };
+
             table.getColumnModel().getColumn(10).setCellRenderer(new HyperlinkRenderer()); // URL 열에 하이퍼링크 renderer 설정
             table.getColumnModel().getColumn(11).setCellRenderer(new InfoRenderer()); // 정보 열에 정보 renderer 설정
 
