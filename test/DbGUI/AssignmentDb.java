@@ -109,7 +109,7 @@ public class AssignmentDb extends JFrame {
                         }
                         else if (value instanceof String && column == 11) { // (정보 열 && 값이 문자열)인 경우
                             String info = (String) value;
-                            showInfoPopup(info); // 정보 팝업
+                            showInfoPopup(info, table, row, column); // 정보 팝업
                         } else if (value instanceof String && column == 1) { // (과제명 열 && 값이 문자열)인 경우
                             String assignmentName = (String) value;
                             showAssignmentPopup(assignmentName); // 과제명 팝업
@@ -117,6 +117,7 @@ public class AssignmentDb extends JFrame {
                     }
                 }
             });
+
 
             JScrollPane scrollPane = new JScrollPane(table); // table을 Scroll 패널에 추가
             tabbedPane.addTab(entry.getKey(), scrollPane); // tab에 Scroll 패널에 추가
@@ -201,7 +202,7 @@ public class AssignmentDb extends JFrame {
                             if (value instanceof Boolean) {
                                 valueStr = (Boolean) value ? "Y" : "N";
                             }
-                            if (valueStr.contains(",") || valueStr.contains("\"")) {
+                            if (valueStr.contains(",") || valueStr.contains("\"") || valueStr.contains("\n")) {
                                 valueStr = "\"" + valueStr.replace("\"", "\"\"") + "\"";
                             }
                             sb.append(valueStr);
@@ -266,6 +267,7 @@ public class AssignmentDb extends JFrame {
         return fields.toArray(new String[0]); // 리스트를 문자열 배열로 반환하여 변환
     }
 
+
     /* openWebpage 메서드는 URL을 기본 웹 브라우저에서 여는 메서드 */
     private void openWebpage(String url) {
         try {
@@ -294,13 +296,27 @@ public class AssignmentDb extends JFrame {
     }
 
     /* showInfoPopup 메서드는 정보 문자열을 팝업 창에 표시하는 메서드 */
-    private void showInfoPopup(String info) {
-        JTextArea textArea = new JTextArea(info); // 정보 문자열로 텍스트 area 생성
-        textArea.setEditable(false); // 주어진 텍스트 영역을 편집할 수 없도록 설정
+    private void showInfoPopup(String initialInfo, JTable table, int row, int column) {
+        JTextArea textArea = new JTextArea(initialInfo); // 정보 문자열로 텍스트 area 생성
+        textArea.setLineWrap(true); // Enable line wrapping
+        textArea.setWrapStyleWord(true); // Wrap at word boundaries
+
         JScrollPane scrollPane = new JScrollPane(textArea); // 텍스트 영역을 스크롤 패널에 추가
         scrollPane.setPreferredSize(new Dimension(400, 300));
-        JOptionPane.showMessageDialog(this, scrollPane, "정보", JOptionPane.PLAIN_MESSAGE); // 팝업 창에 스크롤 패널 표시
+
+        int result = JOptionPane.showConfirmDialog(this, scrollPane, "정보", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            String updatedInfo = textArea.getText();
+            updateTableAndSave(table, row, column, updatedInfo); // 테이블 업데이트 및 CSV 파일 저장
+        }
     }
+
+    private void updateTableAndSave(JTable table, int row, int column, String updatedInfo) {
+        table.setValueAt(updatedInfo, row, column);
+        saveChangesToCsv(); // 변경 내용을 CSV 파일에 저장
+    }
+
 
     /* showAssignmentPopup 매서드는 과제명을 팝업 창에 표시하는 메서드*/
     private void showAssignmentPopup(String assignmentName) {
