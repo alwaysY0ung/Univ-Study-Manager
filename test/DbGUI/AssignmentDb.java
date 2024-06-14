@@ -105,6 +105,9 @@ public class AssignmentDb extends JFrame {
                         else if (value instanceof String && column == 11) { // (정보 열 && 값이 문자열)인 경우
                             String info = (String) value;
                             showInfoPopup(info); // 정보 팝업 
+                        } else if (value instanceof String && column == 1) { // (과제명 열 && 값이 문자열)인 경우
+                            String assignmentName = (String) value;
+                            showAssignmentPopup(assignmentName); // 과제명 팝업
                         }
                     }
                 }
@@ -174,6 +177,15 @@ public class AssignmentDb extends JFrame {
         JScrollPane scrollPane = new JScrollPane(textArea); // 텍스트 영역을 스크롤 패널에 추가
         scrollPane.setPreferredSize(new Dimension(400, 300));
         JOptionPane.showMessageDialog(this, scrollPane, "정보", JOptionPane.PLAIN_MESSAGE); // 팝업 창에 스크롤 패널 표시
+    }
+
+    /* showAssignmentPopup 매서드는 과제명을 팝업 창에 표시하는 메서드*/
+    private void showAssignmentPopup(String assignmentName) {
+        JTextArea textArea = new JTextArea(assignmentName);
+        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(400, 300));
+        JOptionPane.showMessageDialog(this, scrollPane, "과제명", JOptionPane.PLAIN_MESSAGE);
     }
 
     /* HyperlinkRenderer 클래스는 JTabledml cell renderer로 사용되며, 해당 셀의 내용을 하이퍼링크처럼 렌더링 */
