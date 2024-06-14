@@ -47,9 +47,18 @@ public class AssignmentDb extends JFrame {
             table.getModel().addTableModelListener(new TableModelListener() {
                 @Override
                 public void tableChanged(TableModelEvent e) {
+                    int row = e.getFirstRow();
+                    int column = e.getColumn();
+
+                    if (column == 5 || column == 7 || column == 8) { // 성적비율, 과제만점, 내 점수 열이 변경된 경우
+                        updateConvertedScore(table, row);
+                    }
+
                     saveChangesToCsv();
                 }
             });
+
+
 
             table.addMouseListener(new MouseAdapter() { // 마우스 이벤트 Listener 추가
                 @Override
@@ -170,6 +179,20 @@ public class AssignmentDb extends JFrame {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void updateConvertedScore(JTable table, int row) {
+        try {
+            double gradeRatio = Double.parseDouble(table.getValueAt(row, 5).toString());
+            double maxScore = Double.parseDouble(table.getValueAt(row, 7).toString());
+            double myScore = Double.parseDouble(table.getValueAt(row, 8).toString());
+
+            double convertedScore = (gradeRatio * myScore) / maxScore;
+            table.setValueAt(String.format("%.2f", convertedScore), row, 6);
+        } catch (NumberFormatException e) {
+            // Handle parsing errors, e.g., set converted score to zero or show an error message
+            table.setValueAt("0.00", row, 6);
         }
     }
 
