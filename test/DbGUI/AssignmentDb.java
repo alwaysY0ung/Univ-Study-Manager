@@ -13,6 +13,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class AssignmentDb extends JFrame {
     private JTabbedPane tabbedPane; // 탭 패널을 저장하는 변수
@@ -83,6 +86,9 @@ public class AssignmentDb extends JFrame {
             JTable table = new JTable(entry.getValue()); // 테이블 모델로부터 JTable 생성
             table.getColumnModel().getColumn(10).setCellRenderer(new HyperlinkRenderer()); // URL 열에 하이퍼링크 renderer 설정
             table.getColumnModel().getColumn(11).setCellRenderer(new InfoRenderer()); // 정보 열에 정보 renderer 설정
+
+            table.setDefaultRenderer(String.class, new DueDateRenderer());
+
             table.addMouseListener(new MouseAdapter() { // 마우스 이벤트 Listener 추가
                 @Override
                 public void mouseClicked(MouseEvent e) {
@@ -95,7 +101,7 @@ public class AssignmentDb extends JFrame {
                         if (value instanceof String && column == 10) { // (URL 열 && 값이 문자열)인 경우
                             String url = (String) value;
                             openWebpage(url);
-                        } 
+                        }
                         else if (value instanceof String && column == 11) { // (정보 열 && 값이 문자열)인 경우
                             String info = (String) value;
                             showInfoPopup(info); // 정보 팝업 
@@ -132,7 +138,7 @@ public class AssignmentDb extends JFrame {
      */
     private String[] parseCSVLine(String csvLine) {
         boolean inQuotes = false; // 따옴표 안에 있는지 여부
-        StringBuilder sb = new StringBuilder(); 
+        StringBuilder sb = new StringBuilder();
         java.util.List<String> fields = new java.util.ArrayList<>();
 
         for (int i = 0; i < csvLine.length(); i++) {
@@ -190,6 +196,44 @@ public class AssignmentDb extends JFrame {
             label.setForeground(Color.BLUE.darker());
             label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); // 커서 모양: 손가락 모양
             return label;
+        }
+    }
+
+    private class DueDateRenderer extends DefaultTableCellRenderer {
+        private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+            if (column == 1 || column == 2 || column == 3 || column == 4) {
+                String dueDateStr = (String) table.getValueAt(row, 2);
+                if (dueDateStr != null && !dueDateStr.trim().isEmpty()) {
+                    try {
+                        LocalDate dueDate = LocalDate.parse(dueDateStr, formatter);
+                        LocalDate today = LocalDate.now();
+                        LocalDate twoWeeksFromNow = today.plusWeeks(2);
+
+                        boolean isDueSoon = !dueDate.isAfter(twoWeeksFromNow);
+                        boolean completed = (Boolean) table.getValueAt(row, 0);
+
+                        if (isDueSoon && !completed) {
+                            c.setForeground(Color.RED);
+                        } else {
+                            c.setForeground(Color.BLACK);
+                        }
+                    } catch (DateTimeParseException e) {
+                        // Invalid date format, handle accordingly (e.g., log the error, set default color, etc.)
+                        c.setForeground(Color.BLACK);
+                    }
+                } else {
+                    c.setForeground(Color.BLACK);
+                }
+            } else {
+                c.setForeground(Color.BLACK);
+            }
+
+            return c;
         }
     }
 
