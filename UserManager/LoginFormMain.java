@@ -1,5 +1,5 @@
 // https://velog.io/@eg_log/Java-%EB%A1%9C%EA%B7%B8%EC%9D%B8%ED%9A%8C%EC%9B%90%EA%B0%80%EC%9E%85-%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8Swing-GUI#3-user 참고
-// 2024.5.24 made by 정소윤, 유은서
+// 2024.06.14 made by 정소윤, 유은서
 
 package login.project;
 
@@ -22,7 +22,7 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-public class LoginForm extends JFrame {
+public class LoginFormMain extends JFrame {
 
     private UserMgr userMgr;
     private JLabel idLabel;
@@ -33,7 +33,7 @@ public class LoginForm extends JFrame {
     private JButton joinBtn;
     private LayoutManager flowLeft;
 
-    public LoginForm() {
+    public LoginFormMain() {
         userMgr = new UserMgr();
 
         init();
@@ -108,7 +108,7 @@ public class LoginForm extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setVisible(false);
-                new JoinForm(LoginForm.this);
+                new JoinForm(LoginFormMain.this);
                 idTxt.setText("");
                 pwTxt.setText("");
             }
@@ -120,17 +120,17 @@ public class LoginForm extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 // ID 입력하지 않았을 경우
                 if (idTxt.getText().isEmpty()) {
-                    JOptionPane.showMessageDialog(LoginForm.this, "아이디를 입력하세요", "JAVA LOGIN", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(LoginFormMain.this, "아이디를 입력하세요", "JAVA LOGIN", JOptionPane.WARNING_MESSAGE);
                     // 이미 존재하는 ID일 경우
                 } else if (userMgr.isIdOverlap(idTxt.getText())) {
                     // PW 입력하지 않았을 경우
                     if (String.valueOf(pwTxt.getPassword()).isEmpty()) {
-                        JOptionPane.showMessageDialog(LoginForm.this, "암호를 입력하세요", "JAVA LOGIN", JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.showMessageDialog(LoginFormMain.this, "암호를 입력하세요", "JAVA LOGIN", JOptionPane.WARNING_MESSAGE);
                         // PW 틀렸을 경우
                     } else if (!userMgr.chkMem(idTxt.getText(), String.valueOf(pwTxt.getPassword()))) {
-                        JOptionPane.showMessageDialog(LoginForm.this, "암호가 일치하지 않습니다", "RETRY", JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.showMessageDialog(LoginFormMain.this, "암호가 일치하지 않습니다", "RETRY", JOptionPane.WARNING_MESSAGE);
                     } else {
-                        InformationForm informationForm = new InformationForm(LoginForm.this, idTxt.getText());
+                        InformationForm informationForm = new InformationForm(LoginFormMain.this, idTxt.getText());
                         informationForm.setCheck(userMgr.getUser(idTxt.getText()).toString());
                         setVisible(false);
                         informationForm.setVisible(true);
@@ -139,7 +139,7 @@ public class LoginForm extends JFrame {
                     }
                     // 존재하지 않는 ID일 경우
                 } else {
-                    JOptionPane.showMessageDialog(LoginForm.this, "존재하지 않는 ID 입니다", "JAVA LOGIN", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(LoginFormMain.this, "존재하지 않는 ID 입니다", "JAVA LOGIN", JOptionPane.WARNING_MESSAGE);
                 }
             }
         });
@@ -148,7 +148,7 @@ public class LoginForm extends JFrame {
             @Override
             public void windowClosing(WindowEvent we) {
                 int choice = JOptionPane.showConfirmDialog(
-                        LoginForm.this, "다음에 또 만나요!", "BYE JAVA", JOptionPane.OK_CANCEL_OPTION);
+                        LoginFormMain.this, "다음에 또 만나요!", "BYE JAVA", JOptionPane.OK_CANCEL_OPTION);
                 if (choice == JOptionPane.OK_OPTION) {
                     System.exit(0);
                 }
@@ -167,6 +167,6 @@ public class LoginForm extends JFrame {
     }
 
     public static void main(String[] args) {
-        new LoginForm();
+        new LoginFormMain();
     }
 }
