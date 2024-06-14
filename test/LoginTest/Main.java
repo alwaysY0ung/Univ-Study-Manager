@@ -9,6 +9,7 @@ public class Main {
     private static JoinForm joinPanel;
     private static InformationForm infoPanel;
     private static ArrayASCIIArt asciiArtPanel;
+    private static TodaySchedule schedulePanel;
 
     public static void main(String[] args) {
         frame = new JFrame("Main Frame");
@@ -18,9 +19,10 @@ public class Main {
 
         // Initialize panels
         loginPanel = new LoginFormMain();
+        asciiArtPanel = new ArrayASCIIArt();
         joinPanel = new JoinForm(loginPanel);
         infoPanel = new InformationForm(loginPanel, "");
-        asciiArtPanel = new ArrayASCIIArt();
+        schedulePanel = new TodaySchedule();
 
         // Add panels to frame
         frame.add(loginPanel);
@@ -31,8 +33,16 @@ public class Main {
 
     public static void showPanel(JPanel panel) {
         frame.getContentPane().removeAll();
-        frame.setLayout(new GridLayout(1, 2)); // Reset layout to two columns
-        frame.add(panel);
+        frame.setLayout(new BorderLayout()); // Reset layout to BorderLayout
+        frame.add(panel, BorderLayout.CENTER);
+        frame.revalidate();
+        frame.repaint();
+    }
+
+    public static void showLoginPanel() {
+        frame.getContentPane().removeAll();
+        frame.setLayout(new GridLayout(1, 2)); // Split the frame into two columns
+        frame.add(loginPanel);
         frame.add(asciiArtPanel);
         frame.revalidate();
         frame.repaint();
