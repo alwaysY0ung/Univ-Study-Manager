@@ -1,15 +1,11 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -17,7 +13,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
 
 public class LoginFormMain extends JPanel {
 
@@ -131,9 +126,7 @@ public class LoginFormMain extends JPanel {
                     } else if (!userMgr.chkMem(idTxt.getText(), String.valueOf(pwTxt.getPassword()))) {
                         JOptionPane.showMessageDialog(LoginFormMain.this, "암호가 일치하지 않습니다", "RETRY", JOptionPane.WARNING_MESSAGE);
                     } else {
-                        InformationForm informationForm = new InformationForm(LoginFormMain.this, idTxt.getText());
-                        informationForm.setCheck(userMgr.getUser(idTxt.getText()).toString());
-                        Main.showPanel(informationForm);
+                        Main.showPanel(new TodaySchedule());
                         idTxt.setText("");
                         pwTxt.setText("");
                     }
