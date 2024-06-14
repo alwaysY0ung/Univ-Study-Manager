@@ -12,10 +12,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -51,7 +48,7 @@ public class AssignmentDb extends JFrame {
                 }
 
                 @Override
-                public TableCellRenderer getCellRenderer(int row, int column) { // 수정된 부분 시작
+                public TableCellRenderer getCellRenderer(int row, int column) {
                     if (column == 4) { // 과제종류 열
                         return new CustomTableCellRenderer();
                     }
@@ -78,18 +75,35 @@ public class AssignmentDb extends JFrame {
                 }
             });
 
-
-
             table.addMouseListener(new MouseAdapter() { // 마우스 이벤트 Listener 추가
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     int column = table.getColumnModel().getColumnIndexAtX(e.getX()); // 클릭한 열 인텍스
                     int row = e.getY() / table.getRowHeight(); // 클릭한 행 인덱스
 
-                    // 유효한 행과 열 범위 내에 있는 겅우
+                    // 유효한 행과 열 범위 내에 있는 경우
                     if (row < table.getRowCount() && row >= 0 && column < table.getColumnCount() && column >= 0) {
                         Object value = table.getValueAt(row, column); // 앞서 선택한(클릭한) 셀의 값
-                        if (value instanceof String && column == 10) { // (URL 열 && 값이 문자열)인 경우
+                        if (column == 9) { // 관련파일 열인 경우
+                            if (value instanceof String && !((String) value).isEmpty()) {
+                                int response = JOptionPane.showOptionDialog(null,
+                                        "파일을 열겠습니까? 파일을 교체하겠습니까?",
+                                        "파일 열기/교체",
+                                        JOptionPane.YES_NO_CANCEL_OPTION,
+                                        JOptionPane.QUESTION_MESSAGE,
+                                        null,
+                                        new String[]{"파일 열기", "파일 교체", "취소"},
+                                        "파일 열기");
+
+                                if (response == 0) {
+                                    openFile((String) value);
+                                } else if (response == 1) {
+                                    selectFile(table, row, column);
+                                }
+                            } else {
+                                selectFile(table, row, column);
+                            }
+                        } else if (value instanceof String && column == 10) { // (URL 열 && 값이 문자열)인 경우
                             String url = (String) value;
                             openWebpage(url);
                         }
@@ -258,6 +272,24 @@ public class AssignmentDb extends JFrame {
             Desktop.getDesktop().browse(new java.net.URI(url)); // URL 객체 생성 및 기본 웹 브라우저에서 열기
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void openFile(String filePath) {
+        try {
+            Desktop.getDesktop().open(new File(filePath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void selectFile(JTable table, int row, int column) {
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            table.setValueAt(selectedFile.getAbsolutePath(), row, column);
+            saveChangesToCsv();
         }
     }
 
