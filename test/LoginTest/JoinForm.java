@@ -138,7 +138,7 @@ public class JoinForm extends JPanel {
         cancelBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                Main.showPanel(loginForm);
+                Main.showLoginPanel();
             }
         });
 
@@ -158,7 +158,7 @@ public class JoinForm extends JPanel {
                     } else {
                         userMgr.addUser(new User(idTxt.getText(), String.valueOf(pwTxt.getPassword())));
                         JOptionPane.showMessageDialog(JoinForm.this, "회원가입을 완료했습니다", "WELCOME", JOptionPane.PLAIN_MESSAGE);
-                        Main.showPanel(loginForm);
+                        Main.showLoginPanel();
                     }
                 }
             }
