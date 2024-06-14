@@ -21,7 +21,7 @@ public class AssignmentDb extends JFrame {
     private JTabbedPane tabbedPane; // 탭 패널을 저장하는 변수
 
     public AssignmentDb() {
-        String csvFile = "C:/Users/SM-PC/Desktop/java_teamproject/assignment_db.csv";
+        String csvFile = "assignment_db.csv";
         String[] columnNames = {"완료", "과제명", "마감일", "관련수업", "과제종류", "성적비율", "환산점수", "과제만점", "내 점수", "관련파일", "관련URL", "정보"};
 
         // 관련수업별 모델을 저장하는 맵
