@@ -1,5 +1,5 @@
 // https://velog.io/@eg_log/Java-%EB%A1%9C%EA%B7%B8%EC%9D%B8%ED%9A%8C%EC%9B%90%EA%B0%80%EC%9E%85-%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8Swing-GUI#3-user 참고
-// 2024.5.24 made by 정소윤, 유은서
+// 2024.06.14 made by 정소윤, 유은서
 
 package login.project;
 
@@ -24,7 +24,7 @@ import javax.swing.border.EmptyBorder;
 // Java Swing 라이브러리를 사용하여 회원가입 창(JoinForm)을 구현
 public class JoinForm extends JDialog {
 
-    private LoginForm loginForm;
+    private LoginFormMain loginForm;
     private UserMgr userMgr;
 
     private JLabel titleLabel;
@@ -44,8 +44,8 @@ public class JoinForm extends JDialog {
     private JButton cancelBtn;
     private JPanel mainCPanel;
 
-    // JoinForm 클래스는 LoginForm 클래스를 상속받아 만든 대화상자 형태의 GUI 창
-    public JoinForm(LoginForm loginForm) {
+    // JoinForm 클래스는 LoginFormMain 클래스를 상속받아 만든 대화상자 형태의 GUI 창
+    public JoinForm(LoginFormMain loginForm) {
         this.loginForm = loginForm;
         this.userMgr = loginForm.getUserMgr();
 
@@ -155,7 +155,7 @@ public class JoinForm extends JDialog {
         });
 
 
-        // 취소 버튼 클릭 이벤트: 창을 닫고 LoginForm을 다시 보여줌
+        // 취소 버튼 클릭 이벤트: 창을 닫고 LoginFormMain을 다시 보여줌
         cancelBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
