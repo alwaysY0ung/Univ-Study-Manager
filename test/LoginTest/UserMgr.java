@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class UserMgr {
-    private static final String FILE_PATH = "C:/Users/SOYUN/IdeaProjects/loginex/src/UserData.txt";
+    private static final String FILE_PATH = "user.txt";
     private ArrayList<User> users;
 
     public UserMgr() {
