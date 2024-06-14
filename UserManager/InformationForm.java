@@ -21,14 +21,14 @@ import javax.swing.border.TitledBorder;
 
 public class InformationForm extends JDialog {
 
-    private LoginForm owner;
+    private LoginFormMain owner;
     private UserMgr userMgr;
     private String userId;
     private JTextArea check;
     private JButton btnLogout;
     private JButton btnWithdraw;
 
-    public InformationForm(LoginForm owner, String userId) {
+    public InformationForm(LoginFormMain owner, String userId) {
         this.owner = owner;
         this.userId = userId;
         this.userMgr = owner.getUserMgr();
