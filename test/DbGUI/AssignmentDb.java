@@ -1,3 +1,7 @@
+/*
+AssignmentDB.java에서는 과제관련 정보를 csv 파일에서 읽어와 GUI로 표시하는 기능을 제공합니다
+각 정보는 JTable로 표시되며, 관련 수업별로 탭으로 구분되어 있습니다.
+ */
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
