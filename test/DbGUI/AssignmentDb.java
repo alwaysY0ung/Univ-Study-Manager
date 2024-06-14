@@ -8,6 +8,7 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -47,6 +48,14 @@ public class AssignmentDb extends JFrame {
                         return new DefaultCellEditor(comboBox);
                     }
                     return super.getCellEditor(row, column);
+                }
+
+                @Override
+                public TableCellRenderer getCellRenderer(int row, int column) { // 수정된 부분 시작
+                    if (column == 4) { // 과제종류 열
+                        return new CustomTableCellRenderer();
+                    }
+                    return super.getCellRenderer(row, column);
                 }
             };
 
@@ -290,6 +299,64 @@ public class AssignmentDb extends JFrame {
             label.setForeground(Color.BLUE.darker());
             label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); // 커서 모양: 손가락 모양
             return label;
+        }
+    }
+
+    /* JComboBox의 색상 지정 */
+    private class CustomComboBoxRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            if (value != null) {
+                String item = value.toString();
+                switch (item) {
+                    case "보고서":
+                        c.setBackground(new Color(173, 216, 230)); // 하늘색
+                        break;
+                    case "프로젝트":
+                        c.setBackground(new Color(144, 238, 144)); // 연두색
+                        break;
+                    case "출석":
+                        c.setBackground(new Color(255, 192, 203)); // 핑크색
+                        break;
+                    case "시험":
+                        c.setBackground(new Color(240, 128, 128)); // 빨간색
+                        break;
+                    case "퀴즈":
+                        c.setBackground(new Color(255, 255, 224)); // 노란색
+                        break;
+                }
+            }
+            return c;
+        }
+    }
+
+    /* JTable에서 JComboBox 색상 지정                                                                                                                                                                                   */
+    private class CustomTableCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (value != null) {
+                String item = value.toString();
+                switch (item) {
+                    case "보고서":
+                        c.setBackground(new Color(173, 216, 230)); // 하늘색
+                        break;
+                    case "프로젝트":
+                        c.setBackground(new Color(144, 238, 144)); // 연두색
+                        break;
+                    case "출석":
+                        c.setBackground(new Color(255, 192, 203)); // 핑크색
+                        break;
+                    case "시험":
+                        c.setBackground(new Color(240, 128, 128)); // 빨간색
+                        break;
+                    case "퀴즈":
+                        c.setBackground(new Color(255, 255, 224)); // 노란색
+                        break;
+                }
+            }
+            return c;
         }
     }
 
