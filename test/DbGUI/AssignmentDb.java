@@ -1,7 +1,7 @@
 /*
 AssignmentDB.java에서는 과제관련 정보를 csv 파일에서 읽어와 GUI로 표시하는 기능을 제공합니다
 각 정보는 JTable로 표시되며, 관련 수업별로 탭으로 구분되어 있습니다.
- */
+*/
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,13 +36,12 @@ public class AssignmentDb extends JFrame {
     public AssignmentDb() {
         String[] columnNames = {"완료", "과제명", "마감일", "관련수업", "과제종류", "성적비율", "환산점수", "과제만점", "내 점수", "관련파일", "관련URL", "정보"};
 
-        tabbedPane = new JTabbedPane(); // 탭 패널 생성
-        
         loadCsvData();
+
+        tabbedPane = new JTabbedPane(); // 탭 패널 생성
 
         // model Map의 각 entry에 대해 JTable 생성 및 구성
         for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
-            String relatedClass = entry.getKey();
             DefaultTableModel model = entry.getValue();
             JTable table = new JTable(model) {
                 @Override
@@ -89,12 +89,12 @@ public class AssignmentDb extends JFrame {
                     int row = e.getFirstRow();
                     int column = e.getColumn();
 
-                    if (column == 5 || column == 7 || column == 8) { // 성적비율, 과제만점, 내 점수 열이 변경된 경우
-                        updateConvertedScore(table, row);
+                    if (column == 2) { // 마감일 열이 변경된 경우
+                        sortAndSaveCsv();
                     }
 
-                    if (column == 2) { // 마감일 열이 변경된 경우
-                        sortRowsByDueDate(table);
+                    if (column == 5 || column == 7 || column == 8) { // 성적비율, 과제만점, 내 점수 열이 변경된 경우
+                        updateConvertedScore(table, row);
                     }
 
                     saveChangesToCsv();
@@ -252,18 +252,39 @@ public class AssignmentDb extends JFrame {
                     sb.append("\n");
                 }
             }
-
-            // 모든 테이블에 대하여 마감일이 임박한 순서로 정렬
-            for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
-                String relatedClass = entry.getKey();
-                DefaultTableModel model = entry.getValue();
-                JTable table = new JTable(model);
-                sortRowsByDueDate(table);
-            }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void sortAndSaveCsv() {
+        for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
+            DefaultTableModel model = entry.getValue();
+            java.util.List<Object[]> rows = new ArrayList<>();
+
+            for (int row = 0; row < model.getRowCount(); row++) {
+                Object[] rowData = new Object[model.getColumnCount()];
+                for (int col = 0; col < model.getColumnCount(); col++) {
+                    rowData[col] = model.getValueAt(row, col);
+                }
+                rows.add(rowData);
+            }
+
+            rows.sort(Comparator.comparing(o -> {
+                String dateStr = (String) o[2];
+                if (dateStr.isEmpty()) {
+                    return LocalDate.MAX;
+                }
+                return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            }));
+
+            model.setRowCount(0);
+            for (Object[] rowData : rows) {
+                model.addRow(rowData);
+            }
+        }
+
+        saveChangesToCsv();
     }
 
     private void saveChangesToCsv() {
@@ -297,25 +318,6 @@ public class AssignmentDb extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    // 마감일이 임박한 순서로 정렬하는 함수
-    private void sortRowsByDueDate(JTable table) {
-        DefaultTableModel model = (DefaultTableModel) table.getModel();
-        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
-
-        sorter.setComparator(2, new Comparator<String>() {
-            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-            @Override
-            public int compare(String date1, String date2) {
-                LocalDate localDate1 = LocalDate.parse(date1, formatter);
-                LocalDate localDate2 = LocalDate.parse(date2, formatter);
-                return localDate1.compareTo(localDate2);
-            }
-        });
-
-        table.setRowSorter(sorter);
     }
 
     private void updateConvertedScore(JTable table, int row) {
@@ -352,7 +354,7 @@ public class AssignmentDb extends JFrame {
     private String[] parseCSVLine(String csvLine) {
         boolean inQuotes = false; // 따옴표 안에 있는지 여부
         StringBuilder sb = new StringBuilder();
-        java.util.List<String> fields = new java.util.ArrayList<>();
+        java.util.List<String> fields = new ArrayList<>();
 
         for (int i = 0; i < csvLine.length(); i++) {
             char ch = csvLine.charAt(i);
@@ -370,7 +372,6 @@ public class AssignmentDb extends JFrame {
 
         return fields.toArray(new String[0]); // 리스트를 문자열 배열로 반환하여 변환
     }
-
 
     /* openWebpage 메서드는 URL을 기본 웹 브라우저에서 여는 메서드 */
     private void openWebpage(String url) {
