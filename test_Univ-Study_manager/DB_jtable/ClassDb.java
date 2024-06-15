@@ -6,8 +6,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
@@ -19,20 +17,20 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
-/*
-ClassDb.java는 수업 관련 정보를 CSV 파일에서 읽어와 GUI로 표시하는 기능을 제공합니다
-각 수업 정보는 JTable로 표시되며, 강의명별로 탭으로 구분되어 있습니다.
- */
 public class ClassDb extends JPanel {
     private JTabbedPane tabbedPane; // 탭 패널을 저장하는 변수
     private String csvFile = "class_db.csv";
     private String assignmentCsvFile = "assignment_db.csv"; // 추가: assignment_db.csv 파일 경로
     private String[] columnNames = {"주차", "예고된 강의 내용", "복습", "과제/시험", "음성기록", "관련파일", "To-Do", "완료여부", "수업일"};
     private Map<String, DefaultTableModel> modelMap = new HashMap<>(); // 관련수업별 모델을 저장하는 맵
+    private Map<String, String> assignmentInfoMap = new HashMap<>(); // 과제명과 정보 저장
 
     public ClassDb() {
-        loadCsvData();
+        loadCsvData(); // 수업 데이터 로드 및 과제명 설정
+        loadAssignmentData(); // 과제 데이터 로드
 
         tabbedPane = new JTabbedPane(); // 탭 패널 생성
 
@@ -43,12 +41,7 @@ public class ClassDb extends JPanel {
         }
 
         JButton addSubjectButton = new JButton("과목추가");
-        addSubjectButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                addNewSubject();
-            }
-        });
+        addSubjectButton.addActionListener(e -> addNewSubject());
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(addSubjectButton);
@@ -56,6 +49,85 @@ public class ClassDb extends JPanel {
         setLayout(new BorderLayout());
         add(buttonPanel, BorderLayout.SOUTH);
         add(tabbedPane, BorderLayout.CENTER); // 패널에 tab 패널 추가
+    }
+
+    private void loadAssignmentData() {
+        try (BufferedReader br = new BufferedReader(new FileReader(assignmentCsvFile, StandardCharsets.UTF_8))) {
+            String line;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            Map<String, Map<String, List<String>>> assignmentMap = new HashMap<>();
+
+            br.readLine(); // 헤더 건너뛰기
+
+            while ((line = br.readLine()) != null) {
+                String[] data = parseCSVLine(line);
+                if (data.length < 12) continue; // 데이터 길이 확인
+
+                String subjectName = data[3];
+                String assignmentName = data[1];
+                String dueDateStr = data[2];
+                String info = data[11];
+                LocalDate dueDate;
+                try {
+                    dueDate = LocalDate.parse(dueDateStr, formatter);
+                } catch (DateTimeParseException e) {
+                    continue;
+                }
+
+                assignmentMap.putIfAbsent(subjectName, new HashMap<>());
+                assignmentMap.get(subjectName).putIfAbsent(dueDateStr, new ArrayList<>());
+                assignmentMap.get(subjectName).get(dueDateStr).add(assignmentName);
+                assignmentInfoMap.put(assignmentName, info);
+            }
+
+            // 수업일과 마감일을 비교하여 가장 가까운 수업일에 과제명을 표시
+            for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
+                String subjectName = entry.getKey();
+                DefaultTableModel model = entry.getValue();
+                Map<String, List<String>> subjectAssignmentMap = assignmentMap.get(subjectName);
+                if (subjectAssignmentMap == null) continue;
+
+                LocalDate lastClassDate = null;
+
+                for (int i = 0; i < model.getRowCount(); i++) {
+                    String classDateStr = (String) model.getValueAt(i, 8);
+                    if (classDateStr == null || classDateStr.isEmpty()) continue;
+
+                    LocalDate classDate;
+                    try {
+                        classDate = LocalDate.parse(classDateStr, formatter);
+                    } catch (DateTimeParseException e) {
+                        continue;
+                    }
+
+                    if (lastClassDate == null || classDate.isAfter(lastClassDate)) {
+                        lastClassDate = classDate;
+                    }
+
+                    for (Map.Entry<String, List<String>> assignmentEntry : subjectAssignmentMap.entrySet()) {
+                        LocalDate dueDate = LocalDate.parse(assignmentEntry.getKey(), formatter);
+                        if (!classDate.isBefore(dueDate)) {
+                            model.setValueAt(String.join(", ", assignmentEntry.getValue()), i, 3);
+                            subjectAssignmentMap.remove(assignmentEntry.getKey());
+                            break;
+                        }
+                    }
+                }
+
+                // 마지막 수업일보다 뒤에 있는 과제를 마지막 행에 추가
+                if (lastClassDate != null) {
+                    for (Map.Entry<String, List<String>> assignmentEntry : subjectAssignmentMap.entrySet()) {
+                        LocalDate dueDate = LocalDate.parse(assignmentEntry.getKey(), formatter);
+                        if (dueDate.isAfter(lastClassDate)) {
+                            int lastRowIndex = model.getRowCount() - 1;
+                            model.setValueAt(String.join(", ", assignmentEntry.getValue()), lastRowIndex, 3);
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void addNewSubject() {
@@ -125,15 +197,21 @@ public class ClassDb extends JPanel {
 
             @Override
             public TableCellRenderer getCellRenderer(int row, int column) {
+                if (column == 3) { // 과제/시험 열
+                    return new AssignmentRenderer();
+                }
+                if (column == 4) { // 음성기록 열
+                    return new HyperlinkRenderer();
+                }
+                if (column == 5) { // 관련파일 열
+                    return new FileRenderer();
+                }
                 if (column == 1 || column == 6) { // 예고된 강의 내용 또는 To-Do 열
                     return new InfoDateRenderer();
                 }
                 return super.getCellRenderer(row, column);
             }
         };
-
-        table.getColumnModel().getColumn(4).setCellRenderer(new HyperlinkRenderer()); // 음성기록 열에 하이퍼링크 renderer 설정
-        table.getColumnModel().getColumn(5).setCellRenderer(new FileRenderer()); // 관련파일 열에 파일 renderer 설정
 
         table.getModel().addTableModelListener(new TableModelListener() {
             @Override
@@ -149,15 +227,26 @@ public class ClassDb extends JPanel {
                 int row = e.getY() / table.getRowHeight(); // 클릭한 행 인덱스
                 if (row < table.getRowCount() && row >= 0 && column < table.getColumnCount() && column >= 0) {
                     Object value = table.getValueAt(row, column);
-                    if (value instanceof String && column == 4) { // 음성기록 열인 경우
-                        String url = (String) value;
-                        openWebpage(url);
-                    } else if (value instanceof String && column == 5) { // 관련파일 열인 경우
-                        String filePath = (String) value;
-                        handleFileClick(filePath, table, row, column);
-                    } else if (value instanceof String && (column == 1 || column == 6)) { // 예고된 강의 내용 또는 To-Do 열인 경우
-                        String content = (String) value;
-                        showContentPopup(content, table, row, column, column == 1 ? "예고된 강의 내용" : "To-Do");
+                    if (value instanceof String) {
+                        switch (column) {
+                            case 3: // 과제/시험 열인 경우
+                                String assignmentText = (String) value;
+                                showAssignmentText(assignmentText);
+                                break;
+                            case 4: // 음성기록 열인 경우
+                                String url = (String) value;
+                                openWebpage(url);
+                                break;
+                            case 5: // 관련파일 열인 경우
+                                String filePath = (String) value;
+                                handleFileClick(filePath, table, row, column);
+                                break;
+                            case 1: // 예고된 강의 내용 열인 경우
+                            case 6: // To-Do 열인 경우
+                                String content = (String) value;
+                                showContentPopup(content, table, row, column, column == 1 ? "예고된 강의 내용" : "To-Do");
+                                break;
+                        }
                     }
                 }
             }
@@ -167,13 +256,23 @@ public class ClassDb extends JPanel {
         tabbedPane.addTab(title, scrollPane); // tab에 Scroll 패널에 추가
     }
 
+    private void showAssignmentText(String assignmentText) {
+        JTextArea textArea = new JTextArea(assignmentText);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(400, 300));
+        JOptionPane.showMessageDialog(this, scrollPane, "과제/시험", JOptionPane.INFORMATION_MESSAGE);
+    }
+
     /* CSV 데이터를 로드하는 메서드 */
     private void loadCsvData() {
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;
 
-            br.readLine();
+            br.readLine(); // 헤더 건너뛰기
 
             while ((line = br.readLine()) != null) {
                 sb.append(line);
@@ -208,7 +307,7 @@ public class ClassDb extends JPanel {
                     rowData[0] = data[1];
                     rowData[1] = data[2];
                     rowData[2] = data[3].equals("Y");
-                    rowData[3] = data[4];
+                    rowData[3] = ""; // 과제/시험 열은 빈칸으로 시작, 나중에 할당
                     rowData[4] = data[5];
                     rowData[5] = data[6];
                     rowData[6] = data[7];
@@ -279,7 +378,7 @@ public class ClassDb extends JPanel {
     private String[] parseCSVLine(String csvLine) {
         boolean inQuotes = false;
         StringBuilder sb = new StringBuilder();
-        java.util.List<String> fields = new java.util.ArrayList<>();
+        List<String> fields = new ArrayList<>();
 
         for (int i = 0; i < csvLine.length(); i++) {
             char ch = csvLine.charAt(i);
@@ -419,6 +518,16 @@ public class ClassDb extends JPanel {
                 label.setForeground(Color.BLACK);
             }
 
+            return label;
+        }
+    }
+    /* AssignmentRenderer 클래스는 JTable의 cell renderer로 사용되며, 과제명을 하이퍼링크처럼 렌더링 */
+    private class AssignmentRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            label.setForeground(Color.BLUE.darker());
+            label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             return label;
         }
     }
