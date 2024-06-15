@@ -30,7 +30,7 @@ import java.util.Map;
 public class AssignmentDb extends JFrame {
     private JTabbedPane tabbedPane; // 탭 패널을 저장하는 변수
     String csvFile = "assignment_db.csv";
-    // 관련수업별 모델을 저장하는 맵
+    String classCsvFile = "class_db.csv"; // 추가: class_db.csv 파일 경로
     Map<String, DefaultTableModel> modelMap = new HashMap<>();
 
     public AssignmentDb() {
@@ -42,109 +42,7 @@ public class AssignmentDb extends JFrame {
 
         // model Map의 각 entry에 대해 JTable 생성 및 구성
         for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
-            DefaultTableModel model = entry.getValue();
-            JTable table = new JTable(model) {
-                @Override
-                public TableCellEditor getCellEditor(int row, int column) {
-                    if (column == 4) { // 과제종류 열
-                        JComboBox<String> comboBox = new JComboBox<>(new String[]{"보고서", "프로젝트", "출석", "시험", "퀴즈"});
-                        return new DefaultCellEditor(comboBox);
-                    }
-                    return super.getCellEditor(row, column);
-                }
-
-                @Override
-                public TableCellRenderer getCellRenderer(int row, int column) {
-                    if (column == 4) { // 과제종류 열
-                        return new CustomTableCellRenderer();
-                    }
-                    return super.getCellRenderer(row, column);
-                }
-            };
-
-            TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
-            sorter.setComparator(2, new Comparator<String>() {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-                @Override
-                public int compare(String date1, String date2) {
-                    if (date1.isEmpty() || date2.isEmpty()) {
-                        return date1.compareTo(date2);
-                    }
-                    LocalDate localDate1 = LocalDate.parse(date1, formatter);
-                    LocalDate localDate2 = LocalDate.parse(date2, formatter);
-                    return localDate1.compareTo(localDate2);
-                }
-            });
-            table.setRowSorter(sorter);
-
-            table.getColumnModel().getColumn(10).setCellRenderer(new HyperlinkRenderer()); // URL 열에 하이퍼링크 renderer 설정
-            table.getColumnModel().getColumn(11).setCellRenderer(new InfoRenderer()); // 정보 열에 정보 renderer 설정
-
-            table.setDefaultRenderer(String.class, new DueDateRenderer());
-
-            table.getModel().addTableModelListener(new TableModelListener() {
-                @Override
-                public void tableChanged(TableModelEvent e) {
-                    int row = e.getFirstRow();
-                    int column = e.getColumn();
-
-                    if (column == 2) { // 마감일 열이 변경된 경우
-                        sortAndSaveCsv();
-                    }
-
-                    if (column == 5 || column == 7 || column == 8) { // 성적비율, 과제만점, 내 점수 열이 변경된 경우
-                        updateConvertedScore(table, row);
-                    }
-
-                    saveChangesToCsv();
-                }
-            });
-
-            table.addMouseListener(new MouseAdapter() { // 마우스 이벤트 Listener 추가
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    int column = table.getColumnModel().getColumnIndexAtX(e.getX()); // 클릭한 열 인덱스
-                    int row = e.getY() / table.getRowHeight(); // 클릭한 행 인덱스
-
-                    // 유효한 행과 열 범위 내에 있는 경우
-                    if (row < table.getRowCount() && row >= 0 && column < table.getColumnCount() && column >= 0) {
-                        Object value = table.getValueAt(row, column); // 앞서 선택한(클릭한) 셀의 값
-                        if (column == 9) { // 관련파일 열인 경우
-                            if (value instanceof String && !((String) value).isEmpty()) {
-                                int response = JOptionPane.showOptionDialog(null,
-                                        "파일을 열겠습니까? 파일을 교체하겠습니까?",
-                                        "파일 열기/교체",
-                                        JOptionPane.YES_NO_CANCEL_OPTION,
-                                        JOptionPane.QUESTION_MESSAGE,
-                                        null,
-                                        new String[]{"파일 열기", "파일 교체", "취소"},
-                                        "파일 열기");
-
-                                if (response == 0) {
-                                    openFile((String) value);
-                                } else if (response == 1) {
-                                    selectFile(table, row, column);
-                                }
-                            } else {
-                                selectFile(table, row, column);
-                            }
-                        } else if (value instanceof String && column == 10) { // (URL 열 && 값이 문자열)인 경우
-                            String url = (String) value;
-                            openWebpage(url);
-                        } else if (value instanceof String && column == 11) { // (정보 열 && 값이 문자열)인 경우
-                            String info = (String) value;
-                            showInfoPopup(info, table, row, column); // 정보 팝업
-                        } else if (value instanceof String && column == 1) { // (과제명 열 && 값이 문자열)인 경우
-                            String assignmentName = (String) value;
-                            showAssignmentPopup(assignmentName, table, row, column); // 과제명 팝업 (수정 가능)
-                        }
-                    }
-                }
-            });
-
-            JScrollPane scrollPane = new JScrollPane(table); // table을 Scroll 패널에 추가
-            tabbedPane.addTab(entry.getKey(), scrollPane); // tab에 Scroll 패널에 추가
+            addTab(entry.getKey(), entry.getValue());
         }
 
         JButton addButton = new JButton("새 과제 추가");
@@ -163,9 +61,18 @@ public class AssignmentDb extends JFrame {
             }
         });
 
+        JButton addSubjectButton = new JButton("과목추가");
+        addSubjectButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addNewSubjectTab();
+            }
+        });
+
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(addButton);
         buttonPanel.add(deleteButton);
+        buttonPanel.add(addSubjectButton);
 
         add(buttonPanel, BorderLayout.SOUTH);
         add(tabbedPane, BorderLayout.CENTER); // 프레임에 tab 패널 추가
@@ -202,6 +109,159 @@ public class AssignmentDb extends JFrame {
                 saveChangesToCsv();
             }
         }
+    }
+
+    private void addNewSubjectTab() {
+        String subjectName = JOptionPane.showInputDialog(this, "새로운 과목 이름을 입력하세요:", "과목추가", JOptionPane.PLAIN_MESSAGE);
+        if (subjectName != null && !subjectName.trim().isEmpty()) {
+            if (modelMap.containsKey(subjectName)) {
+                JOptionPane.showMessageDialog(this, "이미 존재하는 과목 이름입니다.", "오류", JOptionPane.ERROR_MESSAGE);
+            } else {
+                String firstClassDateStr = JOptionPane.showInputDialog(this, "첫 수업일을 입력하세요 (yyyy-MM-dd):", "첫 수업일 입력", JOptionPane.PLAIN_MESSAGE);
+                if (firstClassDateStr != null && !firstClassDateStr.trim().isEmpty()) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    try {
+                        LocalDate firstClassDate = LocalDate.parse(firstClassDateStr, formatter);
+                        addClassToCsv(subjectName, firstClassDate);
+                        String[] columnNames = {"완료", "과제명", "마감일", "관련수업", "과제종류", "성적비율", "환산점수", "과제만점", "내 점수", "관련파일", "관련URL", "정보"};
+                        DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
+                            @Override
+                            public Class<?> getColumnClass(int columnIndex) {
+                                if (columnIndex == 0) {
+                                    return Boolean.class;
+                                }
+                                return String.class;
+                            }
+                        };
+                        modelMap.put(subjectName, model);
+                        addTab(subjectName, model);
+                        saveChangesToCsv();
+                    } catch (DateTimeParseException e) {
+                        JOptionPane.showMessageDialog(this, "잘못된 날짜 형식입니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        }
+    }
+
+    private void addClassToCsv(String subjectName, LocalDate firstClassDate) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(classCsvFile, true))) {
+            for (int week = 1; week <= 15; week++) {
+                for (int part = 1; part <= 2; part++) {
+                    String classWeek = week + "-" + part;
+                    LocalDate classDate = firstClassDate.plusDays((week - 1) * 7 + (part - 1) * 2);
+                    String classDateStr = classDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                    writer.write(subjectName + "," + classWeek + ",,,,,,,," + classDateStr + "\n");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void addTab(String title, DefaultTableModel model) {
+        JTable table = new JTable(model) {
+            @Override
+            public TableCellEditor getCellEditor(int row, int column) {
+                if (column == 4) { // 과제종류 열
+                    JComboBox<String> comboBox = new JComboBox<>(new String[]{"보고서", "프로젝트", "출석", "시험", "퀴즈"});
+                    return new DefaultCellEditor(comboBox);
+                }
+                return super.getCellEditor(row, column);
+            }
+
+            @Override
+            public TableCellRenderer getCellRenderer(int row, int column) {
+                if (column == 4) { // 과제종류 열
+                    return new CustomTableCellRenderer();
+                }
+                return super.getCellRenderer(row, column);
+            }
+        };
+
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+        sorter.setComparator(2, new Comparator<String>() {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+            @Override
+            public int compare(String date1, String date2) {
+                if (date1.isEmpty() || date2.isEmpty()) {
+                    return date1.compareTo(date2);
+                }
+                LocalDate localDate1 = LocalDate.parse(date1, formatter);
+                LocalDate localDate2 = LocalDate.parse(date2, formatter);
+                return localDate1.compareTo(localDate2);
+            }
+        });
+        table.setRowSorter(sorter);
+
+        table.getColumnModel().getColumn(10).setCellRenderer(new HyperlinkRenderer()); // URL 열에 하이퍼링크 renderer 설정
+        table.getColumnModel().getColumn(11).setCellRenderer(new InfoRenderer()); // 정보 열에 정보 renderer 설정
+
+        table.setDefaultRenderer(String.class, new DueDateRenderer());
+
+        table.getModel().addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                int row = e.getFirstRow();
+                int column = e.getColumn();
+
+                if (column == 2) { // 마감일 열이 변경된 경우
+                    sortAndSaveCsv();
+                }
+
+                if (column == 5 || column == 7 || column == 8) { // 성적비율, 과제만점, 내 점수 열이 변경된 경우
+                    updateConvertedScore(table, row);
+                }
+
+                saveChangesToCsv();
+            }
+        });
+
+        table.addMouseListener(new MouseAdapter() { // 마우스 이벤트 Listener 추가
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int column = table.getColumnModel().getColumnIndexAtX(e.getX()); // 클릭한 열 인덱스
+                int row = e.getY() / table.getRowHeight(); // 클릭한 행 인덱스
+
+                // 유효한 행과 열 범위 내에 있는 경우
+                if (row < table.getRowCount() && row >= 0 && column < table.getColumnCount() && column >= 0) {
+                    Object value = table.getValueAt(row, column); // 앞서 선택한(클릭한) 셀의 값
+                    if (column == 9) { // 관련파일 열인 경우
+                        if (value instanceof String && !((String) value).isEmpty()) {
+                            int response = JOptionPane.showOptionDialog(null,
+                                    "파일을 열겠습니까? 파일을 교체하겠습니까?",
+                                    "파일 열기/교체",
+                                    JOptionPane.YES_NO_CANCEL_OPTION,
+                                    JOptionPane.QUESTION_MESSAGE,
+                                    null,
+                                    new String[]{"파일 열기", "파일 교체", "취소"},
+                                    "파일 열기");
+
+                            if (response == 0) {
+                                openFile((String) value);
+                            } else if (response == 1) {
+                                selectFile(table, row, column);
+                            }
+                        } else {
+                            selectFile(table, row, column);
+                        }
+                    } else if (value instanceof String && column == 10) { // (URL 열 && 값이 문자열)인 경우
+                        String url = (String) value;
+                        openWebpage(url);
+                    } else if (value instanceof String && column == 11) { // (정보 열 && 값이 문자열)인 경우
+                        String info = (String) value;
+                        showInfoPopup(info, table, row, column); // 정보 팝업
+                    } else if (value instanceof String && column == 1) { // (과제명 열 && 값이 문자열)인 경우
+                        String assignmentName = (String) value;
+                        showAssignmentPopup(assignmentName, table, row, column); // 과제명 팝업 (수정 가능)
+                    }
+                }
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(table); // table을 Scroll 패널에 추가
+        tabbedPane.addTab(title, scrollPane); // tab에 Scroll 패널에 추가
     }
 
     private void loadCsvData() {
