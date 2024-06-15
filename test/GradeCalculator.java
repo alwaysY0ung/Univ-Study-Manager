@@ -38,8 +38,9 @@ public class GradeCalculator extends JFrame {
         rightTopPanel.setBackground(Color.CYAN);
 
         // 오른쪽 아래 패널 생성
-        JPanel rightBottomPanel = new JPanel();
-        rightBottomPanel.setBackground(Color.PINK);
+        GraphicsObject a = new GraphicsObject();
+        JPanel rightBottomPanel = a.chartPanel;
+        rightBottomPanel.setBackground(Color.white);
 
         // 오른쪽 패널을 위, 아래로 나누기
         JSplitPane rightSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, rightTopPanel, rightBottomPanel);
