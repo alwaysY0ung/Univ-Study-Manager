@@ -1,12 +1,10 @@
-// package Project;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 
-public class ScheduleAndTodo extends JPanel {
+public class TodaySchedule extends JPanel {
     private JTable todoTable;
     private JTable scheduleTable;
     private JTable assignmentTable;
@@ -15,9 +13,7 @@ public class ScheduleAndTodo extends JPanel {
     private JComboBox<String> statusComboBox;
     private JComboBox<String> typeComboBox;
 
-    public ScheduleAndTodo() {
-        setTitle("# 오늘의 일정 & 과제");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    public TodaySchedule() {
         setLayout(new BorderLayout());
 
         // TO-DO Deadline
@@ -85,7 +81,7 @@ public class ScheduleAndTodo extends JPanel {
                         c.setForeground(table.getForeground());
                     } else {
                         // 체크박스가 체크되지 않은 경우, 첫 번째 요소와 세 번째 요소의 글자 색상을 빨간색으로 변경
-                        c.setForeground(Color.RED);
+                            c.setForeground(Color.RED);
                     }
                 }
                 return c;
@@ -113,9 +109,10 @@ public class ScheduleAndTodo extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // 시간표 팝업 창 구현
-                JDialog timeTableDialog = new JDialog(ScheduleAndTodo.this, "시간표", true);
+                JDialog timeTableDialog = new JDialog();
+                timeTableDialog.setTitle("시간표");
                 timeTableDialog.setSize(400, 300);
-                timeTableDialog.setLocationRelativeTo(ScheduleAndTodo.this);
+                timeTableDialog.setLocationRelativeTo(null);
                 // 시간표 DB에서 정보를 가져와 표 생성
                 // ...
                 timeTableDialog.setVisible(true);
@@ -189,16 +186,5 @@ public class ScheduleAndTodo extends JPanel {
         horizontalSplitPane.setRightComponent(rightPanel);
         horizontalSplitPane.setResizeWeight(0.5);
         add(horizontalSplitPane, BorderLayout.CENTER);
-
-        pack();
-        setVisible(true);
     }
-
-    /*public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                new ScheduleAndTodo();
-            }
-        });
-    } */
 }
