@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class UserMgr {
-    private static final String FILE_PATH = "user.txt";
+    private static final String FILE_PATH = "C:/Users/SOYUN/IdeaProjects/loginex/src/UserData.txt";
     private ArrayList<User> users;
 
     public UserMgr() {
@@ -91,5 +91,29 @@ public class UserMgr {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    // 현재 비밀번호를 사용하여 사용자 아이디를 찾고 비밀전호를 변경하는 메서드
+    public boolean changePassword(String currentPassword, String newPassword) {
+        User user = getUserByPassword(currentPassword);
+        if (user != null) {
+            user.setPw(newPassword);
+            System.out.println("비밀번호가 성공적으로 변경되었습니다.");
+            uploadTxt();
+            return true;
+        } else {
+            System.out.println("현재 비밀번호가 일치하는 사용자가 없습니다.");
+            return false;
+        }
+    }
+
+    // 비밀번호를 사용하여 사용자 객체를 찾는 메서드
+    private User getUserByPassword(String password) {
+        for (User user : users) {
+            if (user.getPw().equals(password)) {
+                return user;
+            }
+        }
+        return null;
     }
 }
