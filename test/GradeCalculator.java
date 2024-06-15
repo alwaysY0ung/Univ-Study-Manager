@@ -7,8 +7,14 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GradeCalculator extends JFrame {
+    private Map<Integer, List<SubjectGrade>> semesterGradesMap;
+
     public GradeCalculator() {
         setTitle("성적계산기");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -49,6 +55,9 @@ public class GradeCalculator extends JFrame {
 
         add(bottomSplitPane, BorderLayout.CENTER);
 
+        // CSV 데이터를 HashMap에 로드
+        semesterGradesMap = loadCSVToHashMap("grade_db.csv");
+
         gradeInputButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -62,8 +71,8 @@ public class GradeCalculator extends JFrame {
     }
 
     private void createPopup() {
-        JFrame popupFrame = new JFrame("CSV 데이터 수정");
-        popupFrame.setSize(400, 800);
+        JFrame popupFrame = new JFrame("성적 데이터 수정");
+        popupFrame.setSize(300, 600);
         popupFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         JPanel panel = new JPanel(new BorderLayout());
@@ -71,40 +80,54 @@ public class GradeCalculator extends JFrame {
         JScrollPane scrollPane = new JScrollPane(table);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        loadCSVData("grade_db.csv", table);
+        loadHashMapDataToTable(semesterGradesMap, table);
+
+        JButton saveButton = new JButton("저장");
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveCSVData("grade_db.csv", (DefaultTableModel) table.getModel());
+            }
+        });
+        panel.add(saveButton, BorderLayout.SOUTH);
 
         popupFrame.add(panel);
         popupFrame.setVisible(true);
     }
 
-    private void loadCSVData(String filePath, JTable table) {
+    private Map<Integer, List<SubjectGrade>> loadCSVToHashMap(String filePath) {
+        Map<Integer, List<SubjectGrade>> map = new HashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String headerLine = br.readLine();
             if (headerLine != null) {
-                String[] columns = headerLine.split(",");
-                DefaultTableModel model = new DefaultTableModel(columns, 0);
                 String line;
                 while ((line = br.readLine()) != null) {
                     String[] data = line.split(",");
-                    model.addRow(data);
-                }
-                table.setModel(model);
+                    int semester = Integer.parseInt(data[0].trim());
+                    String subjectName = data[1].trim();
+                    String grade = data[2].trim();
 
-                // Save changes to the CSV file
-                JButton saveButton = new JButton("저장");
-                saveButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        saveCSVData(filePath, model);
-                    }
-                });
-                ((JPanel) table.getParent().getParent()).add(saveButton, BorderLayout.SOUTH);
-                ((JPanel) table.getParent().getParent()).revalidate();
-                ((JPanel) table.getParent().getParent()).repaint();
+                    SubjectGrade subjectGrade = new SubjectGrade(subjectName, grade);
+                    map.computeIfAbsent(semester, k -> new ArrayList<>()).add(subjectGrade);
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return map;
+    }
+
+    private void loadHashMapDataToTable(Map<Integer, List<SubjectGrade>> map, JTable table) {
+        String[] columns = {"학기", "과목명", "성적"};
+        DefaultTableModel model = new DefaultTableModel(columns, 0);
+
+        for (Map.Entry<Integer, List<SubjectGrade>> entry : map.entrySet()) {
+            int semester = entry.getKey();
+            for (SubjectGrade subjectGrade : entry.getValue()) {
+                model.addRow(new Object[]{semester, subjectGrade.getSubjectName(), subjectGrade.getGrade()});
+            }
+        }
+        table.setModel(model);
     }
 
     private void saveCSVData(String filePath, DefaultTableModel model) {
@@ -128,5 +151,23 @@ public class GradeCalculator extends JFrame {
                 new GradeCalculator();
             }
         });
+    }
+}
+
+class SubjectGrade {
+    private String subjectName;
+    private String grade;
+
+    public SubjectGrade(String subjectName, String grade) {
+        this.subjectName = subjectName;
+        this.grade = grade;
+    }
+
+    public String getSubjectName() {
+        return subjectName;
+    }
+
+    public String getGrade() {
+        return grade;
     }
 }
