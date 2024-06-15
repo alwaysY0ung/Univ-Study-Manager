@@ -1,7 +1,9 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -11,9 +13,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
 
-// Java Swing 라이브러리를 사용하여 회원가입 창(JoinForm)을 구현
 public class JoinForm extends JPanel {
 
     private LoginFormMain loginForm;
@@ -23,20 +23,14 @@ public class JoinForm extends JPanel {
     private JLabel idLabel;
     private JLabel pwLabel;
     private JLabel reLabel;
-    private JLabel nameLabel;
-    private JLabel nickNameLabel;
 
     private JTextField idTxt;
     private JPasswordField pwTxt;
     private JPasswordField reTxt;
-    private JTextField nameTextField;
-    private JTextField nickNameTextField;
 
     private JButton joinBtn;
     private JButton cancelBtn;
-    private JPanel mainCPanel;
 
-    // JoinForm 클래스는 LoginFormMain 클래스를 상속받아 만든 대화상자 형태의 GUI 창
     public JoinForm(LoginFormMain loginForm) {
         this.loginForm = loginForm;
         this.userMgr = loginForm.getUserMgr();
@@ -53,6 +47,7 @@ public class JoinForm extends JPanel {
         Dimension btnSize = new Dimension(100, 25);
 
         titleLabel = new JLabel("- 개인 정보를 입력하세요 -", JLabel.CENTER);
+        titleLabel.setFont(new Font("Serif", Font.BOLD, 18));
 
         idLabel = new JLabel("아이디", JLabel.LEFT);
         idLabel.setPreferredSize(labelSize);
@@ -63,76 +58,57 @@ public class JoinForm extends JPanel {
         reLabel = new JLabel("암호 재입력", JLabel.LEFT);
         reLabel.setPreferredSize(labelSize);
 
-        nameLabel = new JLabel("이름", JLabel.LEFT);
-        nameLabel.setPreferredSize(labelSize);
-
-        nickNameLabel = new JLabel("닉네임", JLabel.LEFT);
-        nickNameLabel.setPreferredSize(labelSize);
-
         idTxt = new JTextField(txtSize);
         pwTxt = new JPasswordField(txtSize);
         reTxt = new JPasswordField(txtSize);
-        nameTextField = new JTextField(txtSize);
-        nickNameTextField = new JTextField(txtSize);
 
         joinBtn = new JButton("JOIN");
         joinBtn.setPreferredSize(btnSize);
         cancelBtn = new JButton("CANCEL");
         cancelBtn.setPreferredSize(btnSize);
-
-        // 레이아웃의 열과 행을 설정, 0은 열의 값을 제한하지 않는다
-        mainCPanel = new JPanel(new GridLayout(0, 1));
     }
 
-    // setDisplay 메소드는 GUI 창을 구성하는 레이아웃을 설정하는 메소드
     private void setDisplay() {
-        FlowLayout flowLeft = new FlowLayout(FlowLayout.LEFT);
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.anchor = GridBagConstraints.CENTER;
 
-        JPanel northPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        northPanel.add(titleLabel);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        add(titleLabel, gbc);
 
-        JPanel idPanel = new JPanel(flowLeft);
-        idPanel.add(idLabel);
-        idPanel.add(idTxt);
+        gbc.gridwidth = 1;
+        gbc.gridy++;
+        gbc.gridx = 0;
+        add(idLabel, gbc);
 
-        JPanel pwPanel = new JPanel(flowLeft);
-        pwPanel.add(pwLabel);
-        pwPanel.add(pwTxt);
+        gbc.gridx = 1;
+        add(idTxt, gbc);
 
-        JPanel rePanel = new JPanel(flowLeft);
-        rePanel.add(reLabel);
-        rePanel.add(reTxt);
+        gbc.gridy++;
+        gbc.gridx = 0;
+        add(pwLabel, gbc);
 
-        JPanel namePanel = new JPanel(flowLeft);
-        namePanel.add(nameLabel);
-        namePanel.add(nameTextField);
+        gbc.gridx = 1;
+        add(pwTxt, gbc);
 
-        JPanel nickNamePanel = new JPanel(flowLeft);
-        nickNamePanel.add(nickNameLabel);
-        nickNamePanel.add(nickNameTextField);
+        gbc.gridy++;
+        gbc.gridx = 0;
+        add(reLabel, gbc);
 
-        // mainCPanel에 위에서 설정한 레이아웃을 적용
-        mainCPanel.add(idPanel);
-        mainCPanel.add(pwPanel);
-        mainCPanel.add(rePanel);
-        mainCPanel.add(namePanel);
-        mainCPanel.add(nickNamePanel);
+        gbc.gridx = 1;
+        add(reTxt, gbc);
 
-        JPanel southPanel = new JPanel();
-        southPanel.add(joinBtn);
-        southPanel.add(cancelBtn);
+        gbc.gridy++;
+        gbc.gridx = 0;
+        add(joinBtn, gbc);
 
-        mainCPanel.setBorder(new EmptyBorder(0, 20, 0, 20));
-        southPanel.setBorder(new EmptyBorder(0, 0, 10, 0));
-
-        // mainCPanel에 northPanel, smsPanel, southPanel을 추가하여 전체 레이아웃을 구성
-        setLayout(new BorderLayout());
-        add(northPanel, BorderLayout.NORTH);
-        add(mainCPanel, BorderLayout.CENTER);
-        add(southPanel, BorderLayout.SOUTH);
+        gbc.gridx = 1;
+        add(cancelBtn, gbc);
     }
 
-    // 이벤트 처리: addListeners 메소드는 GUI 창의 버튼을 처리하는 리스너를 등록
     private void addListeners() {
         // 취소 버튼 클릭 이벤트: 창을 닫고 LoginFormMain을 다시 보여줌
         cancelBtn.addActionListener(new ActionListener() {
@@ -178,14 +154,6 @@ public class JoinForm extends JPanel {
         }
         if (String.valueOf(reTxt.getPassword()).isEmpty()) {
             reTxt.requestFocus();
-            return true;
-        }
-        if (nameTextField.getText().isEmpty()) {
-            nameTextField.requestFocus();
-            return true;
-        }
-        if (nickNameTextField.getText().isEmpty()) {
-            nickNameTextField.requestFocus();
             return true;
         }
         return result;
