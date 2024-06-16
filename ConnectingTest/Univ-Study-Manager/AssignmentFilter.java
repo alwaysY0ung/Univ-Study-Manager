@@ -159,7 +159,7 @@ public class AssignmentFilter extends JPanel {
                     if (fields.length >= 4) {
                         boolean completed = fields[0].equals("Y");
                         String name = fields[1];
-                        String dueDate = fields[2];
+                        String period = fields[2];
                         String subject = fields[3];
                         String type = fields[4];
                         String details = fields.length > 11 ? fields[11] : "";
