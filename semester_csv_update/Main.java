@@ -13,6 +13,7 @@ public class Main {
     private static TodaySchedule schedulePanel;
     private static AssignmentDb assignmentPanel;
     private static ClassDb classPanel;
+    private static GradeCalculator gradePanel;
     private static JTabbedPane mainTabbedPane;
 
     public static void main(String[] args) {
@@ -56,11 +57,13 @@ public class Main {
         schedulePanel = new TodaySchedule(userId, semester);
         assignmentPanel = new AssignmentDb(userId, semester);
         classPanel = new ClassDb(userId, semester);
+        gradePanel = new GradeCalculator(userId);
 
         mainTabbedPane = new JTabbedPane();
         mainTabbedPane.addTab("Today Schedule", schedulePanel);
         mainTabbedPane.addTab("Assignment Management", assignmentPanel);
         mainTabbedPane.addTab("Class Management", classPanel);
+        mainTabbedPane.addTab("Grade Management", gradePanel);
 
         frame.add(mainTabbedPane, BorderLayout.CENTER);
         frame.revalidate();
