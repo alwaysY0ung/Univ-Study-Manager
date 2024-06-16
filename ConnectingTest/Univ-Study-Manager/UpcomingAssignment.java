@@ -5,10 +5,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
@@ -19,13 +16,14 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
-public class UpcomingAssignment extends JPanel {
-    private String csvFile;
-    private DefaultTableModel model;
+public class UpcomingAssignment extends JFrame {
     private JTable table;
-    private TableRowSorter<DefaultTableModel> sorter;
+    private DefaultTableModel model;
+    private String csvFile;
 
     public UpcomingAssignment(String userId, String semester) {
         String[] parts = semester.split("-");
@@ -33,7 +31,6 @@ public class UpcomingAssignment extends JPanel {
         int sem = Integer.parseInt(parts[1].substring(0, 1));
 
         csvFile = userId + "_" + year + "_" + sem + "_assignment_db.csv";
-
         String[] columnNames = {"완료", "과제명", "마감일", "관련수업", "과제종류", "성적비율", "환산점수", "과제만점", "내 점수", "관련파일", "관련URL", "정보"};
 
         model = new DefaultTableModel(columnNames, 0) {
@@ -51,7 +48,7 @@ public class UpcomingAssignment extends JPanel {
         table = new JTable(model) {
             @Override
             public TableCellEditor getCellEditor(int row, int column) {
-                if (column == 4) {
+                if (column == 4) { // 과제종류 열
                     JComboBox<String> comboBox = new JComboBox<>(new String[]{"보고서", "프로젝트", "출석", "시험", "퀴즈"});
                     return new DefaultCellEditor(comboBox);
                 }
@@ -60,32 +57,15 @@ public class UpcomingAssignment extends JPanel {
 
             @Override
             public TableCellRenderer getCellRenderer(int row, int column) {
-                if (column == 4) {
+                if (column == 4) { // 과제종류 열
                     return new CustomTableCellRenderer();
                 }
                 return super.getCellRenderer(row, column);
             }
         };
 
-        sorter = new TableRowSorter<>(model);
-        sorter.setComparator(2, new Comparator<String>() {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-            @Override
-            public int compare(String date1, String date2) {
-                if (date1.isEmpty() || date2.isEmpty()) {
-                    return date1.compareTo(date2);
-                }
-                LocalDate localDate1 = LocalDate.parse(date1, formatter);
-                LocalDate localDate2 = LocalDate.parse(date2, formatter);
-                return localDate1.compareTo(localDate2);
-            }
-        });
-        table.setRowSorter(sorter);
-        applyRowFilter();
-
-        table.getColumnModel().getColumn(10).setCellRenderer(new HyperlinkRenderer());
-        table.getColumnModel().getColumn(11).setCellRenderer(new InfoRenderer());
+        table.getColumnModel().getColumn(10).setCellRenderer(new HyperlinkRenderer()); // URL 열에 하이퍼링크 renderer 설정
+        table.getColumnModel().getColumn(11).setCellRenderer(new InfoRenderer()); // 정보 열에 정보 renderer 설정
 
         table.setDefaultRenderer(String.class, new DueDateRenderer());
 
@@ -95,28 +75,24 @@ public class UpcomingAssignment extends JPanel {
                 int row = e.getFirstRow();
                 int column = e.getColumn();
 
-                if (column == 2) {
-                    sortAndSaveCsv();
-                }
-
-                if (column == 5 || column == 7 || column == 8) {
+                if (column == 5 || column == 7 || column == 8) { // 성적비율, 과제만점, 내 점수 열이 변경된 경우
                     updateConvertedScore(table, row);
                 }
 
                 saveChangesToCsv();
-                applyRowFilter();
             }
         });
 
-        table.addMouseListener(new MouseAdapter() {
+        table.addMouseListener(new MouseAdapter() { // 마우스 이벤트 Listener 추가
             @Override
             public void mouseClicked(MouseEvent e) {
-                int column = table.getColumnModel().getColumnIndexAtX(e.getX());
-                int row = e.getY() / table.getRowHeight();
+                int column = table.getColumnModel().getColumnIndexAtX(e.getX()); // 클릭한 열 인덱스
+                int row = e.getY() / table.getRowHeight(); // 클릭한 행 인덱스
 
+                // 유효한 행과 열 범위 내에 있는 경우
                 if (row < table.getRowCount() && row >= 0 && column < table.getColumnCount() && column >= 0) {
-                    Object value = table.getValueAt(row, column);
-                    if (column == 9) {
+                    Object value = table.getValueAt(row, column); // 앞서 선택한(클릭한) 셀의 값
+                    if (column == 9) { // 관련파일 열인 경우
                         if (value instanceof String && !((String) value).isEmpty()) {
                             int response = JOptionPane.showOptionDialog(null,
                                     "파일을 열겠습니까? 파일을 교체하겠습니까?",
@@ -135,80 +111,36 @@ public class UpcomingAssignment extends JPanel {
                         } else {
                             selectFile(table, row, column);
                         }
-                    } else if (value instanceof String && column == 10) {
+                    } else if (value instanceof String && column == 10) { // (URL 열 && 값이 문자열)인 경우
                         String url = (String) value;
                         openWebpage(url);
-                    } else if (value instanceof String && column == 11) {
+                    } else if (value instanceof String && column == 11) { // (정보 열 && 값이 문자열)인 경우
                         String info = (String) value;
-                        showInfoPopup(info, table, row, column);
-                    } else if (value instanceof String && column == 1) {
+                        showInfoPopup(info); // 정보 팝업
+                    } else if (value instanceof String && column == 1) { // (과제명 열 && 값이 문자열)인 경우
                         String assignmentName = (String) value;
-                        showAssignmentPopup(assignmentName, table, row, column);
+                        showAssignmentPopup(assignmentName); // 과제명 팝업
                     }
                 }
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(table);
+        JScrollPane scrollPane = new JScrollPane(table); // table을 Scroll 패널에 추가
 
-        JButton addButton = new JButton("새 과제 추가");
-        addButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                addNewRow();
-            }
-        });
+        add(scrollPane); // 프레임에 Scroll 패널 추가
 
-        JButton deleteButton = new JButton("선택 과제 삭제");
-        deleteButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                deleteSelectedRow();
-            }
-        });
-
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(addButton);
-        buttonPanel.add(deleteButton);
-
-        setLayout(new BorderLayout());
-        add(buttonPanel, BorderLayout.SOUTH);
-        add(scrollPane, BorderLayout.CENTER);
-    }
-
-    private void applyRowFilter() {
-        sorter.setRowFilter(new RowFilter<DefaultTableModel, Integer>() {
-            @Override
-            public boolean include(Entry<? extends DefaultTableModel, ? extends Integer> entry) {
-                Boolean completed = (Boolean) entry.getValue(0);
-                return completed == null || !completed;
-            }
-        });
-    }
-
-    private void addNewRow() {
-        Object[] newRow = new Object[model.getColumnCount()];
-        model.addRow(newRow);
-        saveChangesToCsv();
-        applyRowFilter();
-    }
-
-    private void deleteSelectedRow() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            model.removeRow(table.convertRowIndexToModel(selectedRow));
-            saveChangesToCsv();
-            applyRowFilter();
-        }
+        setTitle("과제 & 시험 DB"); // 프레임 제목: 과제 & 시험 DB
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // 프레임 종료시, 팝업만 닫힘
+        pack();
+        setLocationRelativeTo(null); // 프레임을 화면 중앙에 배치
     }
 
     private void loadCsvData() {
+        List<Object[]> rowDataList = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;
-            String[] columnNames = {"완료", "과제명", "마감일", "관련수업", "과제종류", "성적비율", "환산점수", "과제만점", "내 점수", "관련파일", "관련URL", "정보"};
-
-            br.readLine();
+            br.readLine(); // Skip header
 
             while ((line = br.readLine()) != null) {
                 sb.append(line);
@@ -223,47 +155,42 @@ public class UpcomingAssignment extends JPanel {
                         continue;
                     }
 
-                    Object[] rowData = new Object[columnNames.length];
-                    rowData[0] = data[0].equals("Y");
-                    for (int i = 1; i < columnNames.length && i < data.length; i++) {
-                        rowData[i] = data[i];
+                    if (!data[0].equals("Y")) {
+                        Object[] rowData = new Object[model.getColumnCount()];
+                        rowData[0] = data[0].equals("Y");
+                        for (int i = 1; i < rowData.length && i < data.length; i++) {
+                            rowData[i] = data[i];
+                        }
+                        rowDataList.add(rowData);
                     }
-                    model.addRow(rowData);
                     sb.setLength(0);
                 } else {
                     sb.append("\n");
                 }
             }
-        } catch (IOException e) {
+
+            Collections.sort(rowDataList, new Comparator<Object[]>() {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+                @Override
+                public int compare(Object[] o1, Object[] o2) {
+                    String dateStr1 = (String) o1[2];
+                    String dateStr2 = (String) o2[2];
+                    if (dateStr1.isEmpty() && dateStr2.isEmpty()) return 0;
+                    if (dateStr1.isEmpty()) return 1;
+                    if (dateStr2.isEmpty()) return -1;
+                    LocalDate date1 = LocalDate.parse(dateStr1, formatter);
+                    LocalDate date2 = LocalDate.parse(dateStr2, formatter);
+                    return date1.compareTo(date2);
+                }
+            });
+
+            for (Object[] rowData : rowDataList) {
+                model.addRow(rowData);
+            }
+        } catch (IOException | DateTimeParseException e) {
             e.printStackTrace();
         }
-    }
-
-    private void sortAndSaveCsv() {
-        java.util.List<Object[]> rows = new ArrayList<>();
-
-        for (int row = 0; row < model.getRowCount(); row++) {
-            Object[] rowData = new Object[model.getColumnCount()];
-            for (int col = 0; col < model.getColumnCount(); col++) {
-                rowData[col] = model.getValueAt(row, col);
-            }
-            rows.add(rowData);
-        }
-
-        rows.sort(Comparator.comparing(o -> {
-            String dateStr = (String) o[2];
-            if (dateStr.isEmpty()) {
-                return LocalDate.MAX;
-            }
-            return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        }));
-
-        model.setRowCount(0);
-        for (Object[] rowData : rows) {
-            model.addRow(rowData);
-        }
-
-        saveChangesToCsv();
     }
 
     private void saveChangesToCsv() {
@@ -282,7 +209,7 @@ public class UpcomingAssignment extends JPanel {
                         if (value instanceof Boolean) {
                             valueStr = (Boolean) value ? "Y" : "N";
                         }
-                        if (valueStr.contains(",") || valueStr.contains("\"") || valueStr.contains("\n")) {
+                        if (valueStr.contains(",") || valueStr.contains("\"")) {
                             valueStr = "\"" + valueStr.replace("\"", "\"\"") + "\"";
                         }
                         sb.append(valueStr);
@@ -298,13 +225,9 @@ public class UpcomingAssignment extends JPanel {
 
     private void updateConvertedScore(JTable table, int row) {
         try {
-            String gradeRatioStr = table.getValueAt(row, 5) != null ? table.getValueAt(row, 5).toString() : "0";
-            String maxScoreStr = table.getValueAt(row, 7) != null ? table.getValueAt(row, 7).toString() : "1";
-            String myScoreStr = table.getValueAt(row, 8) != null ? table.getValueAt(row, 8).toString() : "0";
-
-            double gradeRatio = Double.parseDouble(gradeRatioStr.isEmpty() ? "0" : gradeRatioStr);
-            double maxScore = Double.parseDouble(maxScoreStr.isEmpty() ? "1" : maxScoreStr);
-            double myScore = Double.parseDouble(myScoreStr.isEmpty() ? "0" : myScoreStr);
+            double gradeRatio = Double.parseDouble(table.getValueAt(row, 5).toString());
+            double maxScore = Double.parseDouble(table.getValueAt(row, 7).toString());
+            double myScore = Double.parseDouble(table.getValueAt(row, 8).toString());
 
             double convertedScore = (gradeRatio * myScore) / maxScore;
             table.setValueAt(String.format("%.2f", convertedScore), row, 6);
@@ -326,7 +249,7 @@ public class UpcomingAssignment extends JPanel {
     private String[] parseCSVLine(String csvLine) {
         boolean inQuotes = false;
         StringBuilder sb = new StringBuilder();
-        java.util.List<String> fields = new ArrayList<>();
+        java.util.List<String> fields = new java.util.ArrayList<>();
 
         for (int i = 0; i < csvLine.length(); i++) {
             char ch = csvLine.charAt(i);
@@ -368,45 +291,23 @@ public class UpcomingAssignment extends JPanel {
             File selectedFile = fileChooser.getSelectedFile();
             table.setValueAt(selectedFile.getAbsolutePath(), row, column);
             saveChangesToCsv();
-            applyRowFilter();
         }
     }
 
-    private void showInfoPopup(String initialInfo, JTable table, int row, int column) {
-        JTextArea textArea = new JTextArea(initialInfo);
-        textArea.setLineWrap(true);
-        textArea.setWrapStyleWord(true);
-
+    private void showInfoPopup(String info) {
+        JTextArea textArea = new JTextArea(info);
+        textArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setPreferredSize(new Dimension(400, 300));
-
-        int result = JOptionPane.showConfirmDialog(this, scrollPane, "정보", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-        if (result == JOptionPane.OK_OPTION) {
-            String updatedInfo = textArea.getText();
-            updateTableAndSave(table, row, column, updatedInfo);
-        }
+        JOptionPane.showMessageDialog(this, scrollPane, "정보", JOptionPane.PLAIN_MESSAGE);
     }
 
-    private void updateTableAndSave(JTable table, int row, int column, String updatedInfo) {
-        table.setValueAt(updatedInfo, row, column);
-        saveChangesToCsv();
-        applyRowFilter();
-    }
-
-    private void showAssignmentPopup(String initialAssignmentName, JTable table, int row, int column) {
-        JTextArea textArea = new JTextArea(initialAssignmentName);
+    private void showAssignmentPopup(String assignmentName) {
+        JTextArea textArea = new JTextArea(assignmentName);
+        textArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setPreferredSize(new Dimension(400, 300));
-
-        int result = JOptionPane.showConfirmDialog(this, scrollPane, "과제명", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-        if (result == JOptionPane.OK_OPTION) {
-            String updatedAssignmentName = textArea.getText();
-            table.setValueAt(updatedAssignmentName, row, column);
-            saveChangesToCsv();
-            applyRowFilter();
-        }
+        JOptionPane.showMessageDialog(this, scrollPane, "과제명", JOptionPane.PLAIN_MESSAGE);
     }
 
     private class HyperlinkRenderer extends DefaultTableCellRenderer {
@@ -493,23 +394,26 @@ public class UpcomingAssignment extends JPanel {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-            String dueDateStr = (String) table.getValueAt(row, 2);
-            if (dueDateStr != null && !dueDateStr.trim().isEmpty()) {
-                try {
-                    LocalDate dueDate = LocalDate.parse(dueDateStr, formatter);
-                    LocalDate today = LocalDate.now();
-                    LocalDate twoWeeksFromNow = today.plusWeeks(2);
+            if (column == 1 || column == 2 || column == 3 || column == 4) {
+                String dueDateStr = (String) table.getValueAt(row, 2);
+                if (dueDateStr != null && !dueDateStr.trim().isEmpty()) {
+                    try {
+                        LocalDate dueDate = LocalDate.parse(dueDateStr, formatter);
+                        LocalDate today = LocalDate.now();
+                        LocalDate twoWeeksFromNow = today.plusWeeks(2);
 
-                    boolean isDueSoon = !dueDate.isAfter(twoWeeksFromNow);
-                    Boolean completed = (Boolean) table.getValueAt(row, 0);
-                    if (completed == null) completed = false;
+                        boolean isDueSoon = !dueDate.isAfter(twoWeeksFromNow);
+                        boolean completed = (Boolean) table.getValueAt(row, 0);
 
-                    if (isDueSoon && !completed) {
-                        c.setForeground(Color.RED);
-                    } else {
+                        if (isDueSoon && !completed) {
+                            c.setForeground(Color.RED);
+                        } else {
+                            c.setForeground(Color.BLACK);
+                        }
+                    } catch (DateTimeParseException e) {
                         c.setForeground(Color.BLACK);
                     }
-                } catch (DateTimeParseException e) {
+                } else {
                     c.setForeground(Color.BLACK);
                 }
             } else {
