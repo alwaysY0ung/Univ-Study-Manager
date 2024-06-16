@@ -13,7 +13,9 @@ public class Main {
     private static TodaySchedule schedulePanel;
     private static AssignmentDb assignmentPanel;
     private static ClassDb classPanel;
-    private static GradeCalculator gradePanel;
+    private static GradeCalculator gradeCalculatorPanel;
+    private static UserCalculator userCalculatorPanel;
+    private static Setting settingPanel;
     private static JTabbedPane mainTabbedPane;
 
     public static void main(String[] args) {
@@ -57,13 +59,17 @@ public class Main {
         schedulePanel = new TodaySchedule(userId, semester);
         assignmentPanel = new AssignmentDb(userId, semester);
         classPanel = new ClassDb(userId, semester);
-        gradePanel = new GradeCalculator(userId);
+        gradeCalculatorPanel = new GradeCalculator(userId);
+        userCalculatorPanel = new UserCalculator();
+        settingPanel = new Setting();
 
         mainTabbedPane = new JTabbedPane();
-        mainTabbedPane.addTab("Today Schedule", schedulePanel);
-        mainTabbedPane.addTab("Assignment Management", assignmentPanel);
-        mainTabbedPane.addTab("Class Management", classPanel);
-        mainTabbedPane.addTab("Grade Management", gradePanel);
+        mainTabbedPane.addTab("Today 일정 & 과제", schedulePanel);
+        mainTabbedPane.addTab("수업 DB", assignmentPanel);
+        mainTabbedPane.addTab("과제 DB", classPanel);
+        mainTabbedPane.addTab("성적 계산기", gradeCalculatorPanel);
+        mainTabbedPane.addTab("계산기", userCalculatorPanel);
+        mainTabbedPane.addTab("설정", settingPanel);
 
         frame.add(mainTabbedPane, BorderLayout.CENTER);
         frame.revalidate();
