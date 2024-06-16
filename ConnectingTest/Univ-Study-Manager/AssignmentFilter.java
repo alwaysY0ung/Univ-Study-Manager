@@ -15,7 +15,7 @@ import java.util.List;
 
 public class AssignmentFilter extends JPanel {
     private List<Assignment> assignments;
-    private static final String CSV_FILE_PATH = "assignment_db.csv";
+    private static final String CSV_FILE_PATH = userId + "_" + year + "_" + sem + "_assignment_db.csv";
 
     private JTable assignmentTable;
     public JPanel assignmentPanel;
