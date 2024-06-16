@@ -57,6 +57,13 @@ public class ClassDb extends JPanel {
         add(tabbedPane, BorderLayout.CENTER);
     }
 
+    public int getSelectedTabIndex() {
+        return tabbedPane.getSelectedIndex();
+    }
+
+    public void setSelectedTabIndex(int index) {
+        tabbedPane.setSelectedIndex(index);
+    }
     private void loadAssignmentData() {
         try (BufferedReader br = new BufferedReader(new FileReader(assignmentCsvFile, StandardCharsets.UTF_8))) {
             String line;

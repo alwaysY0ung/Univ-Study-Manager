@@ -1,14 +1,20 @@
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -35,6 +41,7 @@ public class TodaySchedule extends JPanel {
 
     private Map<String, DefaultTableModel> modelMapAssignment = new HashMap<>();
     private Map<String, DefaultTableModel> modelMapClass = new HashMap<>();
+    private DefaultTableModel todoTableModel;
 
     public TodaySchedule(String userId, String semester) {
         this.userId = userId;
@@ -51,56 +58,64 @@ public class TodaySchedule extends JPanel {
         // TO-DO Deadline
         JPanel todoPanel = new JPanel(new BorderLayout());
         todoPanel.setBorder(BorderFactory.createTitledBorder("TO-DO Deadline"));
-        String[] todoColumns = {"과제명", "완료여부", "마감일"};
+        String[] todoColumns = {"To-Do", "완료여부", "마감일"};
 
-        // modelMapAssignment에서 "과제명", "완료여부", "마감일" 데이터 추출
+        // modelMapClass에서 "To-do", "완료여부", "수업일" 데이터 추출
         List<Object[]> todoDataList = new ArrayList<>();
-        for (DefaultTableModel model : modelMapAssignment.values()) {
+        for (DefaultTableModel model : modelMapClass.values()) {
             for (int i = 0; i < model.getRowCount(); i++) {
-                String assignmentName = (String) model.getValueAt(i, 1);
-                boolean isCompleted = (boolean) model.getValueAt(i, 0);
-                String deadline = (String) model.getValueAt(i, 2);
+                String todoItem = (String) model.getValueAt(i, 6);
+                boolean isCompleted = (boolean) model.getValueAt(i, 7);
+                String dueDate = (String) model.getValueAt(i, 8);
 
-                Object[] rowData = {assignmentName, isCompleted, deadline};
-                todoDataList.add(rowData);
+                if (todoItem != null && !todoItem.trim().isEmpty()) {
+                    Object[] rowData = {todoItem, isCompleted, dueDate};
+                    todoDataList.add(rowData);
+                }
             }
         }
 
         // todoData 배열 정의
         Object[][] todoData = todoDataList.toArray(new Object[0][]);
 
-        DefaultTableModel todoTableModel = new DefaultTableModel(todoData, todoColumns);
-        todoTable = new JTable(todoTableModel) {
+        todoTableModel = new DefaultTableModel(todoData, todoColumns) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                // 마감일 컬럼은 수정 불가능하게 설정
+                return column != 2;
+            }
+
             @Override
             public Class<?> getColumnClass(int column) {
                 if (column == 1) {
                     return Boolean.class;
                 }
-                return super.getColumnClass(column);
+                return String.class;
             }
         };
+
+        todoTable = new JTable(todoTableModel);
 
         todoTable.setRowSelectionAllowed(false);
         todoTable.setShowGrid(false);
 
         todoPanel.add(new JScrollPane(todoTable), BorderLayout.CENTER);
 
-        todoTable.addMouseListener(new MouseListener() {
+        todoTable.getModel().addTableModelListener(new TableModelListener() {
             @Override
-            public void mouseClicked(MouseEvent e) {}
+            public void tableChanged(TableModelEvent e) {
+                saveChangesToCsv();
+            }
+        });
+
+        todoTable.addMouseListener(new MouseAdapter() {
             @Override
-            public void mousePressed(MouseEvent e) {}
-            @Override
-            public void mouseReleased(MouseEvent e) {
+            public void mouseClicked(MouseEvent e) {
                 int col = todoTable.getSelectedColumn();
                 if (col == 1) {
                     todoTable.repaint();
                 }
             }
-            @Override
-            public void mouseEntered(MouseEvent e) {}
-            @Override
-            public void mouseExited(MouseEvent e) {}
         });
 
         // 미완료 과제 빨간색으로 강조
@@ -164,7 +179,6 @@ public class TodaySchedule extends JPanel {
         // 예정된 과제
         AssignmentFilter a = new AssignmentFilter(userId, semester);
         JPanel assignmentPanel = a.assignmentPanel;
-
 
         // -------------시간표 이미지 띄우고 변경하기
         JPanel courseTimetablePanel = new JPanel(new BorderLayout());
@@ -350,7 +364,7 @@ public class TodaySchedule extends JPanel {
     private String[] parseCSVLine(String csvLine) {
         boolean inQuotes = false; // 따옴표 안에 있는지 여부
         StringBuilder sb = new StringBuilder();
-        java.util.List<String> fields = new ArrayList<>();
+        List<String> fields = new ArrayList<>();
 
         for (int i = 0; i < csvLine.length(); i++) {
             char ch = csvLine.charAt(i);
@@ -367,6 +381,61 @@ public class TodaySchedule extends JPanel {
         fields.add(sb.toString().trim()); // Add the last field
 
         return fields.toArray(new String[0]); // 리스트를 문자열 배열로 반환하여 변환
+    }
+
+    private void saveChangesToCsv() {
+        String csvFileClass = userId + "_" + year + "_" + sem + "_class_db.csv";
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(csvFileClass), StandardCharsets.UTF_8)) {
+            writer.write("강의명,주차,예고된 강의 내용,복습,과제/시험,음성기록,관련파일,To-Do,완료여부,수업일\n");
+
+            // Update modelMapClass with changes from todoTable
+            for (int i = 0; i < todoTableModel.getRowCount(); i++) {
+                String todoItem = (String) todoTableModel.getValueAt(i, 0);
+                boolean isCompleted = (boolean) todoTableModel.getValueAt(i, 1);
+                String dueDate = (String) todoTableModel.getValueAt(i, 2);
+
+                // Find the corresponding row in modelMapClass and update it
+                for (DefaultTableModel model : modelMapClass.values()) {
+                    for (int j = 0; j < model.getRowCount(); j++) {
+                        String classDueDate = (String) model.getValueAt(j, 8);
+                        String classTodoItem = (String) model.getValueAt(j, 6);
+                        if (dueDate.equals(classDueDate) && todoItem.equals(classTodoItem)) {
+                            model.setValueAt(todoItem, j, 6);
+                            model.setValueAt(isCompleted, j, 7);
+                        }
+                    }
+                }
+            }
+
+            for (Map.Entry<String, DefaultTableModel> entry : modelMapClass.entrySet()) {
+                String className = entry.getKey();
+                DefaultTableModel model = entry.getValue();
+                for (int row = 0; row < model.getRowCount(); row++) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(className).append(",");
+                    for (int col = 0; col < model.getColumnCount(); col++) {
+                        if (col > 0) {
+                            sb.append(',');
+                        }
+                        Object value = model.getValueAt(row, col);
+                        if (value != null) {
+                            String valueStr = value.toString();
+                            if (value instanceof Boolean) {
+                                valueStr = (Boolean) value ? "Y" : "N";
+                            }
+                            if (valueStr.contains(",") || valueStr.contains("\"") || valueStr.contains("\n")) {
+                                valueStr = "\"" + valueStr.replace("\"", "\"\"") + "\"";
+                            }
+                            sb.append(valueStr);
+                        }
+                    }
+                    writer.write(sb.toString());
+                    writer.newLine();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     // 기본 이미지 설정 메서드

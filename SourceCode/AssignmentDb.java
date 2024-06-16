@@ -18,16 +18,15 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 
 public class AssignmentDb extends JPanel {
     private JTabbedPane tabbedPane;
     private String csvFile;
     private String classCsvFile;
     private Map<String, DefaultTableModel> modelMap = new HashMap<>();
+    private boolean isSaving = false; // Flag to prevent infinite loop
 
     public AssignmentDb(String userId, String semester) {
         String[] parts = semester.split("-");
@@ -82,6 +81,14 @@ public class AssignmentDb extends JPanel {
 
         ButtonPanel sidePanel = new ButtonPanel(userId, semester); // 사용자 ID와 학기를 전달하여 새로운 패널 추가
         add(sidePanel, BorderLayout.EAST); // 오른쪽에 패널 추가
+    }
+
+    public int getSelectedTabIndex() {
+        return tabbedPane.getSelectedIndex();
+    }
+
+    public void setSelectedTabIndex(int index) {
+        tabbedPane.setSelectedIndex(index);
     }
 
     private void addNewRow() {
@@ -213,6 +220,8 @@ public class AssignmentDb extends JPanel {
         table.getModel().addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
+                if (isSaving) return;
+
                 int row = e.getFirstRow();
                 int column = e.getColumn();
 
@@ -327,36 +336,42 @@ public class AssignmentDb extends JPanel {
     }
 
     private void sortAndSaveCsv() {
-        for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
-            DefaultTableModel model = entry.getValue();
-            java.util.List<Object[]> rows = new ArrayList<>();
+        isSaving = true;
+        try {
+            for (Map.Entry<String, DefaultTableModel> entry : modelMap.entrySet()) {
+                DefaultTableModel model = entry.getValue();
+                List<Object[]> rows = new ArrayList<>();
 
-            for (int row = 0; row < model.getRowCount(); row++) {
-                Object[] rowData = new Object[model.getColumnCount()];
-                for (int col = 0; col < model.getColumnCount(); col++) {
-                    rowData[col] = model.getValueAt(row, col);
+                for (int row = 0; row < model.getRowCount(); row++) {
+                    Object[] rowData = new Object[model.getColumnCount()];
+                    for (int col = 0; col < model.getColumnCount(); col++) {
+                        rowData[col] = model.getValueAt(row, col);
+                    }
+                    rows.add(rowData);
                 }
-                rows.add(rowData);
+
+                rows.sort(Comparator.comparing(o -> {
+                    String dateStr = (String) o[2];
+                    if (dateStr.isEmpty()) {
+                        return LocalDate.MAX;
+                    }
+                    return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                }));
+
+                model.setRowCount(0);
+                for (Object[] rowData : rows) {
+                    model.addRow(rowData);
+                }
             }
 
-            rows.sort(Comparator.comparing(o -> {
-                String dateStr = (String) o[2];
-                if (dateStr.isEmpty()) {
-                    return LocalDate.MAX;
-                }
-                return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            }));
-
-            model.setRowCount(0);
-            for (Object[] rowData : rows) {
-                model.addRow(rowData);
-            }
+            saveChangesToCsv();
+        } finally {
+            isSaving = false;
         }
-
-        saveChangesToCsv();
     }
 
     private void saveChangesToCsv() {
+        isSaving = true;
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(csvFile), StandardCharsets.UTF_8)) {
             writer.write("완료,과제명,마감일,관련수업,과제종류,성적비율,환산점수,과제만점,내 점수,관련파일,관련URL,정보\n");
 
@@ -386,6 +401,8 @@ public class AssignmentDb extends JPanel {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            isSaving = false;
         }
     }
 
@@ -419,7 +436,7 @@ public class AssignmentDb extends JPanel {
     private String[] parseCSVLine(String csvLine) {
         boolean inQuotes = false;
         StringBuilder sb = new StringBuilder();
-        java.util.List<String> fields = new ArrayList<>();
+        List<String> fields = new ArrayList<>();
 
         for (int i = 0; i < csvLine.length(); i++) {
             char ch = csvLine.charAt(i);

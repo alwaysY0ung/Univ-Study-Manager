@@ -11,7 +11,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
-
 public class AssignmentFilter extends JPanel {
     private List<Assignment> assignments;
     private String userId;
@@ -132,7 +131,8 @@ public class AssignmentFilter extends JPanel {
                 Date dueDate = sdf.parse(assignment.getDueDate());
                 assignmentTableModel.addRow(new Object[]{assignment.getSubject(), assignment.getName(), sdf.format(dueDate)});
             } catch (ParseException e) {
-                e.printStackTrace();
+                // Handle the exception gracefully
+                assignmentTableModel.addRow(new Object[]{assignment.getSubject(), assignment.getName(), assignment.getDueDate()});
             }
         }
     }
