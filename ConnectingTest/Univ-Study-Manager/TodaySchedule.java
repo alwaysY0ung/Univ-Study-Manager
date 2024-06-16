@@ -299,41 +299,8 @@ public class TodaySchedule extends JPanel {
         });
 
         // 예정된 과제
-        JPanel assignmentPanel = new JPanel(new BorderLayout());
-        assignmentPanel.setBorder(BorderFactory.createTitledBorder("예정된 과제"));
-        String[] assignmentColumns = {"과목", "과제", "마감일"};
-        Object[][] assignmentData = {
-                {"과목1", "과제1", "2024.5.10"},
-                {"과목2", "과제2", "2024.5.15"},
-                {"과목3", "과제3", "2024.5.20"}
-        };
-        DefaultTableModel assignmentTableModel = new DefaultTableModel(assignmentData, assignmentColumns);
-        assignmentTable = new JTable(assignmentTableModel);
-        assignmentTable.setRowSelectionAllowed(false);
-        assignmentTable.setShowGrid(false);
-        assignmentPanel.add(new JScrollPane(assignmentTable), BorderLayout.CENTER);
-
-        // 정렬 & 필터 선택
-        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        String[] sortOptions = {"시간순", "과목순"};
-        sortComboBox = new JComboBox<>(sortOptions);
-        filterPanel.add(new JLabel("정렬: "));
-        filterPanel.add(sortComboBox);
-
-        String[] filterOptions = {"전과목", "전공과목", "교양과목"};
-        filterComboBox = new JComboBox<>(filterOptions);
-        filterPanel.add(new JLabel("필터: "));
-        filterPanel.add(filterComboBox);
-
-        String[] statusOptions = {"미완과제", "완료과제", "전체과제"};
-        statusComboBox = new JComboBox<>(statusOptions);
-        filterPanel.add(statusComboBox);
-
-        String[] typeOptions = {"전체종류", "시험", "보고서", "퀴즈", "프로젝트"};
-        typeComboBox = new JComboBox<>(typeOptions);
-        filterPanel.add(typeComboBox);
-
-        assignmentPanel.add(filterPanel, BorderLayout.NORTH);
+        AssignmentFilter a = new AssignmentFilter();
+        JPanel assignmentPanel = a.assignmentPanel;        
 
         // 예정된 TO-DO
         JPanel upcomingPanel = new JPanel(new BorderLayout());
