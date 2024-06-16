@@ -152,7 +152,10 @@ public class CalendarAssignment extends JPanel implements ActionListener {
                         String subject = fields[3];
                         String type = fields[4];
                         String description = fields.length > 11 ? fields[11] : "";
-                        Assignment assignment = new Assignment(completed, assignmentName, period, subject, type, description);
+
+                        String dueDate = period.isEmpty() ? "2024-06-21" : period;
+
+                        Assignment assignment = new Assignment(completed, assignmentName, dueDate, subject, type, description);
                         assignmentList.add(assignment);
                     }
                     sb.setLength(0);
@@ -273,8 +276,8 @@ public class CalendarAssignment extends JPanel implements ActionListener {
     }
 
     private void showAssignmentDetails(Assignment assignment) {
-
-        assignmentDialog = new JDialog(this, assignment.getName() + " 과제 정보", true);
+        JFrame parentFrame = new JFrame();
+        assignmentDialog = new JDialog(parentFrame, assignment.getName() + " 과제 정보", true);
         assignmentDialog.setSize(400, 300);
         assignmentDialog.setLocationRelativeTo(this);
 
