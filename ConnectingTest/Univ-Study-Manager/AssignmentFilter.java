@@ -163,6 +163,9 @@ public class AssignmentFilter extends JPanel {
                         String subject = fields[3];
                         String type = fields[4];
                         String details = fields.length > 11 ? fields[11] : "";
+                        
+                        String dueDate = period.isEmpty() ? "2024-06-21" : period;
+
                         Assignment assignment = new Assignment(completed, name, dueDate, subject, type, details);
                         assignmentList.add(assignment);
                     }
