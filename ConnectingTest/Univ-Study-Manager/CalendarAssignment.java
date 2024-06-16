@@ -12,7 +12,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 
-public class CalendarAssignment extends JFrame implements ActionListener {
+public class CalendarAssignment extends JPanel implements ActionListener {
     private Calendar cal;
     private int year, month, date;
     private JPanel pane = new JPanel();
@@ -67,7 +67,6 @@ public class CalendarAssignment extends JFrame implements ActionListener {
         }
         day(year, month);
 
-        setTitle("캘린더");
         pane.add(btn1);
         pane.add(yearCombo);
         pane.add(yearlb);
@@ -82,8 +81,6 @@ public class CalendarAssignment extends JFrame implements ActionListener {
 
         setVisible(true);
         setSize(900, 700);
-        setResizable(false);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         btn1.addActionListener(this);
         btn2.addActionListener(this);
