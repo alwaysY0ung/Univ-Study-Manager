@@ -25,7 +25,6 @@ public class Main {
         asciiArtPanel = new ArrayASCIIArt();
         joinPanel = new JoinForm(loginPanel);
         infoPanel = new InformationForm(loginPanel, "");
-        schedulePanel = new TodaySchedule();
 
         frame.add(loginPanel);
         frame.add(asciiArtPanel);
@@ -54,6 +53,7 @@ public class Main {
         frame.getContentPane().removeAll();
         frame.setLayout(new BorderLayout());
 
+        schedulePanel = new TodaySchedule(userId, semester);
         assignmentPanel = new AssignmentDb(userId, semester);
         classPanel = new ClassDb(userId, semester);
 
