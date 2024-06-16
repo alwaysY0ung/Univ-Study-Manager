@@ -34,7 +34,7 @@ public class Main {
         schedulePanel = new TodaySchedule();
         classPanel = new ClassDb();
         assignmentPanel = new AssignmentDb();
-        //GradeCalPanel = new GradeCalculator();
+        GradeCalPanel = new GradeCalculator();
         UserCalPanel = new UserCalculator();
         settingPanel = new Setting();
 
@@ -44,7 +44,7 @@ public class Main {
         mainTabbedPane.addTab("오늘의 일정 & 과제", schedulePanel);
         mainTabbedPane.addTab("수업 DB", classPanel);
         mainTabbedPane.addTab("과제 DB", assignmentPanel);
-        //mainTabbedPane.addTab("성적계산기", GradeCalPanel);
+        mainTabbedPane.addTab("성적계산기", GradeCalPanel);
         mainTabbedPane.addTab("자율계산기", UserCalPanel);
         mainTabbedPane.addTab("설정", settingPanel);
 
