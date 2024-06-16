@@ -16,7 +16,7 @@ public class GraphicsObject extends JPanel {
     String[] itemName = {"A+", "A0", "A-", "B+", "B0", "B-", "C+", "C0", "C-", "P"}; // 비교대상
 
     ChartPanel chartPanel = new ChartPanel(); // 차트판넬
-    String csvFilePath = "C:\\Users\\SM-PC\\Documents\\workspace\\IntelliJ\\Java\\Java_2024\\src\\Project\\grade_db.csv"; // CSV 파일 경로를 여기에 입력하세요
+    String csvFilePath = "grade_db.csv"; // CSV 파일 경로를 여기에 입력하세요
     String[] grades = extractGradesFromCSV(csvFilePath);
 
     public GraphicsObject() { // 생성자
