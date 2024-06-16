@@ -1,6 +1,9 @@
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.swing.UIManager;
+import javax.swing.plaf.ColorUIResource;
 import java.awt.BorderLayout;
+import java.awt.Color;
 
 public class ArrayASCIIArt extends JPanel {
     private JTextArea asciiArtArea;
@@ -9,6 +12,7 @@ public class ArrayASCIIArt extends JPanel {
         asciiArtArea = new JTextArea();
         asciiArtArea.setEditable(false);
         setLayout(new BorderLayout());
+        asciiArtArea.setForeground(new Color(0, 0, 150));
         add(asciiArtArea, BorderLayout.CENTER);
         displayAsciiArt();
     }

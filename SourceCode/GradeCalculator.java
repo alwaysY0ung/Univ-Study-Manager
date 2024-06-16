@@ -3,11 +3,10 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
-
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +28,7 @@ public class GradeCalculator extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         // 왼쪽 패널 생성
-        JPanel leftPanel = new JPanel();
+        JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.setBackground(Color.WHITE);
 
         // 오른쪽 패널 생성
@@ -64,6 +63,16 @@ public class GradeCalculator extends JPanel {
         gradeTable = new JTable();
         JScrollPane scrollPane = new JScrollPane(gradeTable);
         leftPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // 성적 입력 버튼 추가
+        JButton addGradeButton = new JButton("성적 입력");
+        addGradeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openAddGradeDialog();
+            }
+        });
+        leftPanel.add(addGradeButton, BorderLayout.SOUTH);
 
         // 오른쪽 위 패널에 학기별 평균 점수 표시
         semesterGPATextArea = new JTextArea();
@@ -126,7 +135,6 @@ public class GradeCalculator extends JPanel {
 
         gradeTable.setModel(tableModel);
         gradeTable.setFillsViewportHeight(true);
-        //gradeTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
         // 컬럼 크기 조정
         adjustColumnWidths(gradeTable);
@@ -137,7 +145,6 @@ public class GradeCalculator extends JPanel {
         // 학기별 평균 점수 계산 및 표시
         displaySemesterGPA();
     }
-
 
     private void adjustColumnWidths(JTable table) {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
@@ -220,12 +227,51 @@ public class GradeCalculator extends JPanel {
         }
     }
 
+    private void openAddGradeDialog() {
+        JPanel panel = new JPanel(new GridLayout(5, 2));
+        JTextField semesterField = new JTextField();
+        JTextField subjectNameField = new JTextField();
+        JTextField creditField = new JTextField();
+        JTextField gradeField = new JTextField();
+
+        panel.add(new JLabel("학기:"));
+        panel.add(semesterField);
+        panel.add(new JLabel("과목명:"));
+        panel.add(subjectNameField);
+        panel.add(new JLabel("학점:"));
+        panel.add(creditField);
+        panel.add(new JLabel("성적:"));
+        panel.add(gradeField);
+
+        int result = JOptionPane.showConfirmDialog(this, panel, "성적 입력", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            int semester = Integer.parseInt(semesterField.getText().trim());
+            String subjectName = subjectNameField.getText().trim();
+            int credit = Integer.parseInt(creditField.getText().trim());
+            String grade = gradeField.getText().trim();
+
+            SubjectGrade newGrade = new SubjectGrade(subjectName, credit, grade);
+            semesterGradesMap.computeIfAbsent(semester, k -> new ArrayList<>()).add(newGrade);
+            saveGradeToCSV(semester, subjectName, credit, grade);
+            updateGradeTable();
+            rightTopPanel.repaint();  // 그래프 다시 그리기
+        }
+    }
+
+    private void saveGradeToCSV(int semester, String subjectName, int credit, String grade) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(csvFilePath, true))) {
+            writer.write("\n" + semester + "," + subjectName + "," + credit + "," + grade);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void drawLineGraph(Graphics2D g2d) {
         int width = rightTopPanel.getWidth();
         int height = rightTopPanel.getHeight();
         int padding = 20;
         int labelPadding = 25;
-        double maxScore = 5.0;
+        double maxScore = 4.5; // Adjusted to reflect realistic GPA maximum
         double minScore = 0.0;
 
         g2d.setColor(Color.WHITE);
@@ -243,31 +289,28 @@ public class GradeCalculator extends JPanel {
             int y = (int) ((maxScore - score) / (maxScore - minScore) * (height - 2 * padding - labelPadding) + padding);
             g2d.drawLine(padding + labelPadding - 5, y, padding + labelPadding, y);
             if (i != numYTicks - 1) {
-                g2d.drawString(String.format("%.0f", score), padding, y);
+                g2d.drawString(String.format("%.1f", score), padding, y);
             }
         }
 
         // x축 눈금 그리기
-        int numXTicks = 10;
-        for (int i = 1; i < numXTicks; i++) {
-            int x = (int) (((double) i / (numXTicks - 1)) * (width - 2 * padding - labelPadding) + padding + labelPadding);
+        int numXTicks = 8; // Number of semesters (adjust if more semesters are possible)
+        for (int i = 1; i <= numXTicks; i++) {
+            int x = (int) (((double) i / numXTicks) * (width - 2 * padding - labelPadding) + padding + labelPadding);
             g2d.drawLine(x, height - padding, x, height - padding + 5);
-            if (i != numXTicks - 1) {
+            if (i != numXTicks) {
                 g2d.drawString(i + "학기", x - 10, height - padding + 20);
             }
-
         }
 
         // 축 레이블 그리기
-        // g2d.drawString("학기", width / 2 - 10, height - 5);
         g2d.rotate(-Math.PI / 2);
-        // g2d.drawString("평균 점수", -height / 2 + 10, padding);
-        g2d.drawString("평균 점수", -height / 2 + 10, padding - 8);
+        g2d.drawString("평균 점수", -height / 2, padding - 8);
         g2d.rotate(Math.PI / 2);
 
         // 데이터 포인트 계산
-        java.util.List<Point> graphPoints = new ArrayList<>();
-        java.util.List<Double> semesterGPAList = new ArrayList<>();
+        List<Point> graphPoints = new ArrayList<>();
+        List<Double> semesterGPAList = new ArrayList<>();
         for (Map.Entry<Integer, List<SubjectGrade>> entry : semesterGradesMap.entrySet()) {
             int semester = entry.getKey();
             List<SubjectGrade> subjectGrades = entry.getValue();
@@ -284,7 +327,7 @@ public class GradeCalculator extends JPanel {
             }
 
             double semesterGPA = totalGradePoint / totalCredit;
-            int x = (int) (((double) semester / (8)) * (width - 2 * padding - labelPadding) + padding + labelPadding);
+            int x = (int) (((double) semester / (numXTicks)) * (width - 2 * padding - labelPadding) + padding + labelPadding);
             int y = (int) ((maxScore - semesterGPA) / (maxScore - minScore) * (height - 2 * padding - labelPadding) + padding);
             graphPoints.add(new Point(x, y));
             semesterGPAList.add(semesterGPA);

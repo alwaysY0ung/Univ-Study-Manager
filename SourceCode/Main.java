@@ -26,6 +26,7 @@ public class Main {
     private static UserCalculator userCalculatorPanel;
     private static Setting settingPanel;
     private static JTabbedPane mainTabbedPane;
+    private static GraphicsObject graphicsPanel;
     private static Thread watchThread;
 
     public static void main(String[] args) {
@@ -75,6 +76,7 @@ public class Main {
         classPanel = new ClassDb(userId, semester);
         gradeCalculatorPanel = new GradeCalculator(userId);
         userCalculatorPanel = new UserCalculator();
+        graphicsPanel = new GraphicsObject(userId);
         settingPanel = new Setting();
 
         mainTabbedPane = new JTabbedPane();
@@ -109,15 +111,16 @@ public class Main {
                 String sem = semester.split("-")[1].substring(0, 1);
                 Path assignmentPath = Paths.get(userId + "_" + year + "_" + sem + "_assignment_db.csv").toAbsolutePath();
                 Path classPath = Paths.get(userId + "_" + year + "_" + sem + "_class_db.csv").toAbsolutePath();
+                Path gradePath = Paths.get(userId + "_GradeDB.csv").toAbsolutePath();
 
                 WatchService watchService = FileSystems.getDefault().newWatchService();
-                assignmentPath.getParent().register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+                gradePath.getParent().register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
 
                 while (true) {
                     WatchKey key = watchService.take();
                     for (WatchEvent<?> event : key.pollEvents()) {
                         Path changed = (Path) event.context();
-                        if (changed.endsWith(assignmentPath.getFileName()) || changed.endsWith(classPath.getFileName())) {
+                        if (changed.endsWith(assignmentPath.getFileName()) || changed.endsWith(classPath.getFileName()) || changed.endsWith(gradePath.getFileName())) {
                             // Update the panels
                             SwingUtilities.invokeLater(() -> {
                                 int selectedTabIndex = mainTabbedPane.getSelectedIndex();
@@ -130,6 +133,10 @@ public class Main {
                                 mainTabbedPane.setSelectedIndex(selectedTabIndex);
                                 assignmentPanel.setSelectedTabIndex(selectedAssignmentTabIndex);
                                 classPanel.setSelectedTabIndex(selectedClassTabIndex);
+
+                                // Update GraphicsObject
+                                graphicsPanel = new GraphicsObject(userId);
+                                mainTabbedPane.setComponentAt(mainTabbedPane.indexOfTab("그래프"), graphicsPanel);
                             });
                         }
                     }
@@ -139,6 +146,7 @@ public class Main {
                     }
                 }
             } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
             }
         });
         watchThread.start();

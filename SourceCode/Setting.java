@@ -8,76 +8,103 @@ public class Setting extends JPanel {
     private JPasswordField currentPasswordField;
     private JPasswordField newPasswordField;
     private JButton changeButton;
-    private JButton lightModeButton;
-    private JButton darkModeButton;
     private JButton logoutButton;
     private JButton withdrawButton;
-    private boolean isDarkMode = false;
 
     public Setting() {
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        init();
+        setDisplay();
+        addListeners();
+    }
 
-        // 아이디, 현재 비밀번호, 새 비밀번호 입력 패널
-        JPanel inputPanel = new JPanel(new GridLayout(1, 6));
-        inputPanel.add(new JLabel("아이디:"));
-        idField = new JTextField(10);
-        inputPanel.add(idField);
-        inputPanel.add(new JLabel("현재 비밀번호:"));
-        currentPasswordField = new JPasswordField(10);
-        inputPanel.add(currentPasswordField);
-        inputPanel.add(new JLabel("새 비밀번호:"));
-        newPasswordField = new JPasswordField(10);
-        inputPanel.add(newPasswordField);
+    private void init() {
+        int txtSize = 10;
+
+        Dimension labelSize = new Dimension(100, 30);
+        Dimension btnSize = new Dimension(120, 30);
+
+        idField = new JTextField(txtSize);
+        currentPasswordField = new JPasswordField(txtSize);
+        newPasswordField = new JPasswordField(txtSize);
+
         changeButton = new JButton("변경");
+        changeButton.setPreferredSize(btnSize);
+        logoutButton = new JButton("로그아웃");
+        logoutButton.setPreferredSize(btnSize);
+        withdrawButton = new JButton("탈퇴");
+        withdrawButton.setPreferredSize(btnSize);
+    }
+
+    private void setDisplay() {
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.anchor = GridBagConstraints.CENTER;
+
+        JLabel titleLabel = new JLabel("- 설정 -", JLabel.CENTER);
+        titleLabel.setFont(new Font("Serif", Font.BOLD, 18));
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        add(titleLabel, gbc);
+
+        gbc.gridwidth = 1;
+        gbc.gridy++;
+        gbc.gridx = 0;
+        add(new JLabel("아이디:", JLabel.RIGHT), gbc);
+
+        gbc.gridx = 1;
+        add(idField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        add(new JLabel("현재 비밀번호:", JLabel.RIGHT), gbc);
+
+        gbc.gridx = 1;
+        add(currentPasswordField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        add(new JLabel("새 비밀번호:", JLabel.RIGHT), gbc);
+
+        gbc.gridx = 1;
+        add(newPasswordField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        add(changeButton, gbc);
+
+        gbc.gridx = 1;
+        add(logoutButton, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        add(withdrawButton, gbc);
+    }
+
+    private void addListeners() {
         changeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 changePassword();
             }
         });
-        inputPanel.add(changeButton);
-        add(inputPanel);
 
-        // 테마 변경 패널
-        JPanel themePanel = new JPanel();
-        themePanel.add(new JLabel("테마 변경:"));
-        lightModeButton = new JButton("Light Mode");
-        lightModeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                setLightMode();
-            }
-        });
-        themePanel.add(lightModeButton);
-        darkModeButton = new JButton("Dark Mode");
-        darkModeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                setDarkMode();
-            }
-        });
-        themePanel.add(darkModeButton);
-        add(themePanel);
-
-        // 로그아웃, 탈퇴 버튼 패널
-        JPanel buttonPanel = new JPanel();
-        logoutButton = new JButton("로그아웃");
         logoutButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 logout();
             }
         });
-        buttonPanel.add(logoutButton);
-        withdrawButton = new JButton("탈퇴");
+
         withdrawButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 withdraw();
             }
         });
-        buttonPanel.add(withdrawButton);
-        add(buttonPanel);
     }
 
     // 비밀번호 변경 메서드
@@ -99,25 +126,11 @@ public class Setting extends JPanel {
         }
     }
 
-    // Light Mode로 설정
-    private void setLightMode() {
-        isDarkMode = false;
-        setBackground(Color.WHITE);
-        setForeground(Color.BLACK);
-    }
-
-    // Dark Mode로 설정
-    private void setDarkMode() {
-        isDarkMode = true;
-        setBackground(Color.DARK_GRAY);
-        setForeground(Color.WHITE);
-    }
-
     // 로그아웃 메서드
     private void logout() {
         int confirm = JOptionPane.showConfirmDialog(this, "로그아웃 하시겠습니까?", "로그아웃", JOptionPane.YES_NO_OPTION);
 
-        if(confirm == JOptionPane.YES_OPTION) {
+        if (confirm == JOptionPane.YES_OPTION) {
             Main.showLoginPanel(); // 로그아웃 처리
             JOptionPane.showMessageDialog(this, "로그아웃되었습니다.", "로그아웃 성공", JOptionPane.INFORMATION_MESSAGE);
         }
