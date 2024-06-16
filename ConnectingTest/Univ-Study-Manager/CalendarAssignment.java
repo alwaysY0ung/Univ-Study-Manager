@@ -29,7 +29,7 @@ public class CalendarAssignment extends JPanel implements ActionListener {
     private String titleStr[] = {"일", "월", "화", "수", "목", "금", "토"};
     private JPanel datePane = new JPanel(new GridLayout(0, 7));
     private List<Assignment> assignments;
-    private static final String CSV_FILE_PATH = "C:\\Users\\SM-PC\\Documents\\workspace\\IntelliJ\\Java\\Java_2024\\src\\Project\\assignment_db.csv";
+    private static final String CSV_FILE_PATH = userId + "_" + year + "_" + sem + "_assignment_db.csv";
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     private JDialog assignmentDialog;
     private JTextArea descriptionArea;
